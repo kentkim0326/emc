@@ -215,19 +215,19 @@ EMC는 전기차 시대의 문화 IP를 한국이 선점하는 것을 목표로 
         <div class="contact-card" data-reveal><div class="contact-icon">🤝</div><h4 data-i18n="ct4_title">기관 협력</h4><p data-i18n="ct4_body">지자체·정부기관 MOU 문의</p></div>
       </div>
       <div class="contact-form-wrap" data-reveal>
-        <form class="contact-form" id="contactForm">
+        <form class="contact-form" id="contactForm" action="https://formspree.io/f/mdawvarp" method="POST">
           <div class="form-row">
-            <input type="text"  data-i18n="form_name"  placeholder="성함"   required />
-            <input type="email" data-i18n="form_email" placeholder="이메일" required />
+            <input type="text"  data-i18n="form_name"  placeholder="성함"   name="name" required />
+            <input type="email" data-i18n="form_email" placeholder="이메일" name="email" required />
           </div>
-          <select required>
+          <select name="inquiry_type" required>
             <option value="" disabled selected data-i18n="form_select">문의 유형 선택</option>
             <option data-i18n="ct1_title">스폰서십</option>
             <option data-i18n="ct2_title">참가 신청</option>
             <option data-i18n="ct3_title">미디어 협력</option>
             <option data-i18n="ct4_title">기관 협력</option>
           </select>
-          <textarea data-i18n="form_msg" placeholder="메시지를 입력해주세요" rows="4" required></textarea>
+          <textarea data-i18n="form_msg" placeholder="메시지를 입력해주세요" name="message" rows="4" required></textarea>
           <button type="submit" class="btn-primary full" id="submitBtn" data-i18n="form_submit">문의하기 →</button>
         </form>
       </div>

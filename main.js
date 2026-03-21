@@ -40,14 +40,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: 0.1 });
   document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
 
-  // ── Contact form ──
-  document.getElementById('contactForm').addEventListener('submit', (e) => {
+  // ── Contact form (Formspree) ──
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     const lang = localStorage.getItem('emc_lang') || 'ko';
-    btn.textContent = t('form_done', lang);
-    btn.style.background = '#00b87a';
-    setTimeout(() => { btn.textContent = t('form_submit', lang); btn.style.background = ''; e.target.reset(); }, 3000);
+    const form = e.target;
+
+    btn.textContent = '전송 중...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (res.ok) {
+        btn.textContent = t('form_done', lang);
+        btn.style.background = '#00b87a';
+        form.reset();
+        setTimeout(() => {
+          btn.textContent = t('form_submit', lang);
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 4000);
+      } else {
+        btn.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+        btn.style.background = '#e53e3e';
+        btn.disabled = false;
+      }
+    } catch (err) {
+      btn.textContent = '네트워크 오류. 다시 시도해주세요.';
+      btn.style.background = '#e53e3e';
+      btn.disabled = false;
+    }
   });
 
   // ── Active nav ──
