@@ -463,3 +463,33 @@ footer {
   .founder-wrap { flex-direction: column; align-items: center; text-align: center; }
   .founder-quote { text-align: left; }
 }
+
+/* ── LANG BAR ── */
+#lang-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(5, 8, 20, 0.95);
+  border-bottom: 1px solid rgba(0,229,160,0.15);
+  padding: 0 1rem;
+}
+.lang-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; gap: 0.4rem; padding: 0.35rem 0;
+  overflow-x: auto; scrollbar-width: none;
+}
+.lang-inner::-webkit-scrollbar { display: none; }
+.lang-btn {
+  background: transparent; border: 1px solid rgba(0,229,160,0.15);
+  color: var(--gray); font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 1px; padding: 0.25rem 0.6rem; border-radius: 2px;
+  cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  flex-shrink: 0;
+}
+.lang-btn:hover { border-color: var(--green); color: var(--green); }
+.lang-btn.active {
+  background: var(--green); border-color: var(--green);
+  color: var(--navy); font-weight: 700;
+}
+
+/* Offset nav for lang bar */
+#nav { top: 34px; }
+#hero { padding-top: 34px; }
