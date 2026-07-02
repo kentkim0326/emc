@@ -22,6 +22,7 @@
     --radius: 12px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; }
   body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
 
   /* ── MAP ── */
@@ -416,18 +417,15 @@
   #fab-chat { bottom: 120px; }
 
 </style>
-
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 </head>
 <body>
 
 <!-- MAP -->
-<div id="map" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+<div id="map" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;"></div>
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <a href="./about.html" style="text-decoration:none"><div class="logo">EMC<span> ⚡</span></div></a>
+  <a href="/about" style="text-decoration:none"><div class="logo">EMC<span> ⚡</span></div></a>
   <div id="searchbar">
     <span class="search-icon">🔍</span>
     <input type="text" id="search-input" placeholder="충전소 검색 / Search chargers..." />
@@ -435,7 +433,7 @@
   <div class="top-actions">
     <button class="btn-icon" id="lang-btn" onclick="toggleLang()">🌐 KO</button>
     <button class="btn-icon" title="내 위치" onclick="goToMyLocation()">📍</button>
-    <a href="./about.html" class="btn-icon" title="About EMC" style="text-decoration:none;font-size:12px;font-weight:600;color:var(--text)">EMC</a>
+    <a href="/about" class="btn-icon" title="About EMC" style="text-decoration:none;font-size:12px;font-weight:600;color:var(--text)">EMC</a>
   </div>
 </div>
 
@@ -703,6 +701,10 @@ function toggleLang() { document.getElementById('lang-menu').classList.toggle('o
 function closeLang() { document.getElementById('lang-menu').classList.remove('open'); }
 
 // ── MAP SETUP ──
+// 지도 컨테이너 크기 강제
+document.getElementById('map').style.width = window.innerWidth + 'px';
+document.getElementById('map').style.height = window.innerHeight + 'px';
+
 const map = new maplibregl.Map({
   container: 'map',
   style: {
@@ -905,6 +907,16 @@ document.getElementById('search-input').addEventListener('input', e => {
 
 // Close menus on map click
 map.on('click', () => { closeLang(); });
+
+// 창 크기 변경시 지도 리사이즈
+window.addEventListener('resize', () => {
+  map.resize();
+});
+
+// 로드 후 강제 리사이즈
+window.addEventListener('load', () => {
+  setTimeout(() => map.resize(), 100);
+});
 
 // Pulse animation for markers
 const style = document.createElement('style');
