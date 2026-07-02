@@ -425,7 +425,7 @@
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <a href="/about" style="text-decoration:none"><div class="logo">EMC<span> ⚡</span></div></a>
+  <a href="/about" style="text-decoration:none;display:flex;align-items:center;"><img src="/assets/emc-logo.png" alt="EMC" style="height:38px;width:auto;object-fit:contain;filter:drop-shadow(0 0 8px rgba(255,100,0,0.4));"></a>
   <div id="searchbar">
     <span class="search-icon">🔍</span>
     <input type="text" id="search-input" placeholder="충전소 검색 / Search chargers..." />
@@ -1017,11 +1017,39 @@ setInterval(fetchWeather, 10 * 60 * 1000); // 10분마다 갱신
 // ── RSS 뉴스 (Google News RSS → 실제 배포시 CORS 프록시 필요) ──
 // 현재는 정적 뉴스로 운영, 추후 Supabase Edge Function으로 RSS 파싱
 async function fetchEVNews() {
-  // TODO: RSS 프록시 서버 구축 후 연동
-  // const rss = await fetch('https://your-proxy/ev-news');
-  // 현재는 정적 뉴스 유지
+  try {
+    // RSS2JSON - Google News EV 관련 RSS 파싱 (무료, CORS 지원)
+    const queries = [
+      '전기차+충전소',
+      'electric+vehicle+EV+news',
+      '테슬라+현대+기아+전기차'
+    ];
+    const q = queries[Math.floor(Date.now()/3600000) % queries.length];
+    const rssUrl = encodeURIComponent(`https://news.google.com/rss/search?q=${q}&hl=ko&gl=KR&ceid=KR:ko`);
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=15`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.items || data.items.length === 0) return;
+
+    const inner = document.getElementById('news-inner');
+    if (!inner) return;
+
+    // 뉴스 아이템 생성
+    const icons = ['🚗','⚡','🔋','🌍','🏎️','💡','📱','🇰🇷','🚀','🏆'];
+    let newsHTML = data.items.map((item, i) => {
+      const title = item.title.replace(/<[^>]*>/g, '').replace(' - .*', '').substring(0, 60);
+      const icon = icons[i % icons.length];
+      return `<span class="ticker-item" onclick="window.open('${item.link}','_blank')" style="cursor:pointer"><span class="ti-icon">${icon}</span>${title}</span>`;
+    }).join('');
+    // 루프를 위해 두 번 반복
+    inner.innerHTML = newsHTML + newsHTML;
+    console.log('✅ EV 뉴스 로드:', data.items.length, '건');
+  } catch(e) {
+    console.log('뉴스 로드 실패 (정적 뉴스 유지):', e.message);
+  }
 }
 fetchEVNews();
+setInterval(fetchEVNews, 30 * 60 * 1000); // 30분마다 갱신
 </script>
 
 </body>
