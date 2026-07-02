@@ -1,23 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/map",
-      "destination": "/map.html"
+      "source": "/about",
+      "destination": "/about.html"
     },
     {
-      "source": "/map/",
-      "destination": "/map.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
+      "source": "/about/",
+      "destination": "/about.html"
     }
   ]
 }
