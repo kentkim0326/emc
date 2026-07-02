@@ -416,6 +416,29 @@
   #legend   { bottom: 46px; }
   #fab-chat { bottom: 120px; }
 
+
+  /* ── MAP STYLE TOGGLE ── */
+  #style-toggle {
+    position:absolute; top:70px; right:20px; z-index:100;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .style-btn {
+    width:42px; height:42px; border-radius:10px;
+    background:var(--surface); border:1.5px solid var(--border);
+    color:var(--text); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:.2s; position:relative;
+  }
+  .style-btn:hover { border-color:var(--accent); transform:scale(1.05); }
+  .style-btn.active { border-color:var(--accent); background:rgba(0,229,160,0.15); }
+  .style-btn .style-label {
+    position:absolute; right:48px; top:50%; transform:translateY(-50%);
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600;
+    white-space:nowrap; opacity:0; pointer-events:none; transition:.15s;
+  }
+  .style-btn:hover .style-label { opacity:1; }
+
 </style>
 </head>
 <body>
@@ -459,6 +482,23 @@
   <div class="lang-opt" onclick="setLang('sv')">🇸🇪 Svenska</div>
   <div class="lang-opt" onclick="setLang('pl')">🇵🇱 Polski</div>
   <div class="lang-opt" onclick="setLang('uk')">🇺🇦 Українська</div>
+</div>
+
+
+<!-- MAP STYLE TOGGLE -->
+<div id="style-toggle">
+  <button class="style-btn active" onclick="setMapStyle('dark')" id="btn-dark" title="Dark">
+    🌑<span class="style-label">Dark</span>
+  </button>
+  <button class="style-btn" onclick="setMapStyle('light')" id="btn-light" title="Light">
+    ☀️<span class="style-label">Light</span>
+  </button>
+  <button class="style-btn" onclick="setMapStyle('street')" id="btn-street" title="Street">
+    🗺️<span class="style-label">Street</span>
+  </button>
+  <button class="style-btn" onclick="setMapStyle('satellite')" id="btn-satellite" title="Satellite">
+    🛰️<span class="style-label">Satellite</span>
+  </button>
 </div>
 
 <!-- FILTER BAR -->
@@ -906,6 +946,55 @@ document.getElementById('search-input').addEventListener('input', e => {
 });
 
 // Close menus on map click
+
+// ── MAP STYLE SWITCHER ──
+const mapStyles = {
+  dark: {
+    tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
+    attribution: '© OpenStreetMap © CartoDB',
+    label: 'Dark'
+  },
+  light: {
+    tiles: ['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],
+    attribution: '© OpenStreetMap © CartoDB',
+    label: 'Light'
+  },
+  street: {
+    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+    attribution: '© OpenStreetMap contributors',
+    label: 'Street'
+  },
+  satellite: {
+    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    attribution: '© Esri © DigitalGlobe',
+    label: 'Satellite'
+  }
+};
+
+let currentStyle = 'dark';
+
+function setMapStyle(styleName) {
+  if (currentStyle === styleName) return;
+  currentStyle = styleName;
+  const style = mapStyles[styleName];
+
+  // 타일 소스 업데이트
+  map.getSource('osm').setTiles(style.tiles);
+
+  // 버튼 active 상태
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + styleName).classList.add('active');
+
+  // 라이트/스트리트 모드에서 UI 색상 조정
+  const isLight = styleName === 'light' || styleName === 'street';
+  document.getElementById('topbar').style.background = isLight
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%)'
+    : 'linear-gradient(180deg, rgba(10,14,26,0.95) 0%, rgba(10,14,26,0) 100%)';
+
+  showToast('🗺️ ' + style.label + ' 모드');
+}
+
+
 map.on('click', () => { closeLang(); });
 
 // 창 크기 변경시 지도 리사이즈
@@ -1054,4 +1143,5 @@ setInterval(fetchEVNews, 30 * 60 * 1000); // 30분마다 갱신
 
 </body>
 </html>
+
 
