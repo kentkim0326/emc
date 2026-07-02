@@ -1,276 +1,862 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EMC — Electric Mobility Competition</title>
-  <meta name="description" content="전기자동차 시대, 한국이 만드는 글로벌 축제." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMC — EV Charger Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: rgba(255,255,255,0.08);
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --warn: #ff6b35;
+    --text: #f0f4ff;
+    --muted: #6b7a99;
+    --panel-w: 380px;
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
+
+  /* ── MAP ── */
+  #map { position:absolute; inset:0; }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    position:absolute; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; gap:12px;
+    padding:14px 20px;
+    background:linear-gradient(180deg, rgba(10,14,26,0.95) 0%, rgba(10,14,26,0) 100%);
+  }
+  .logo {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;
+    color:var(--accent); letter-spacing:-0.5px; white-space:nowrap;
+  }
+  .logo span { color:var(--text); }
+  #searchbar {
+    flex:1; max-width:420px;
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:999px; padding:9px 18px;
+  }
+  #searchbar input {
+    flex:1; background:none; border:none; outline:none;
+    color:var(--text); font-size:14px; font-family:'Inter',sans-serif;
+  }
+  #searchbar input::placeholder { color:var(--muted); }
+  .search-icon { color:var(--muted); font-size:16px; }
+  .top-actions { display:flex; gap:8px; margin-left:auto; }
+  .btn-icon {
+    width:38px; height:38px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--border);
+    color:var(--text); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:.2s; position:relative;
+  }
+  .btn-icon:hover { background:var(--surface2); border-color:var(--accent); }
+  #lang-btn { font-size:12px; font-weight:600; width:auto; padding:0 14px; border-radius:999px; gap:4px; }
+
+  /* ── FILTER BAR ── */
+  #filterbar {
+    position:absolute; top:70px; left:20px; z-index:100;
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .filter-pill {
+    display:flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:999px; font-size:12px; font-weight:500;
+    background:var(--surface); border:1px solid var(--border);
+    color:var(--muted); cursor:pointer; transition:.2s; white-space:nowrap;
+  }
+  .filter-pill:hover, .filter-pill.active {
+    background:var(--accent); color:#000; border-color:var(--accent);
+  }
+  .filter-pill .dot { width:8px; height:8px; border-radius:50%; }
+  .dot-green { background:#00e5a0; }
+  .dot-yellow { background:#ffd700; }
+  .dot-red { background:#ff4d4d; }
+
+  /* ── LEGEND ── */
+  #legend {
+    position:absolute; bottom:30px; left:20px; z-index:100;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:14px 18px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .legend-title { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .legend-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .legend-dot { width:10px; height:10px; border-radius:50%; }
+  .l-ok { background:#00e5a0; }
+  .l-busy { background:#ffd700; }
+  .l-broken { background:#ff4d4d; }
+  .l-dc { background:#0066ff; }
+
+  /* ── STATS BAR ── */
+  #statsbar {
+    position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
+    z-index:100;
+    display:flex; gap:1px; overflow:hidden;
+    border-radius:var(--radius); border:1px solid var(--border);
+  }
+  .stat-item {
+    background:var(--surface); padding:12px 24px; text-align:center;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .stat-num { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--accent); }
+  .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+
+  /* ── SIDE PANEL ── */
+  #panel {
+    position:absolute; top:0; right:0; bottom:0; z-index:200;
+    width:var(--panel-w); background:var(--surface);
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+    transform:translateX(100%); transition:.3s ease;
+  }
+  #panel.open { transform:translateX(0); }
+  #panel-header {
+    padding:20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px;
+  }
+  .panel-back {
+    width:32px; height:32px; border-radius:8px;
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+  }
+  .panel-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; }
+  .panel-subtitle { font-size:12px; color:var(--muted); margin-top:2px; }
+  #panel-body { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; }
+  #panel-body::-webkit-scrollbar { width:4px; }
+  #panel-body::-webkit-scrollbar-track { background:transparent; }
+  #panel-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* Status badge */
+  .status-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:999px; font-size:12px; font-weight:600;
+  }
+  .status-ok { background:rgba(0,229,160,.15); color:#00e5a0; }
+  .status-busy { background:rgba(255,215,0,.15); color:#ffd700; }
+  .status-broken { background:rgba(255,77,77,.15); color:#ff4d4d; }
+
+  /* Info grid */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .info-card {
+    background:var(--surface2); border-radius:10px; padding:14px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .info-card-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .info-card-val { font-size:16px; font-weight:600; }
+
+  /* Connector list */
+  .connector-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; background:var(--surface2); border-radius:10px;
+  }
+  .connector-name { font-size:13px; font-weight:500; }
+  .connector-kw { font-size:12px; color:var(--muted); }
+  .connector-avail { font-size:12px; color:var(--accent); font-weight:600; }
+
+  /* Photo upload */
+  .photo-section { display:flex; flex-direction:column; gap:10px; }
+  .photo-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .photo-thumb {
+    aspect-ratio:1; border-radius:8px; overflow:hidden;
+    background:var(--surface2); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; transition:.2s;
+  }
+  .photo-thumb:hover { border-color:var(--accent); }
+  .photo-thumb img { width:100%; height:100%; object-fit:cover; }
+  .upload-thumb { border:1.5px dashed var(--border); color:var(--muted); font-size:22px; }
+
+  /* Report */
+  .report-btn {
+    width:100%; padding:12px; border-radius:10px;
+    background:rgba(255,107,53,.1); border:1px solid rgba(255,107,53,.3);
+    color:var(--warn); font-size:13px; font-weight:600;
+    cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .report-btn:hover { background:rgba(255,107,53,.2); }
+
+  /* Reviews */
+  .review-item {
+    padding:12px 14px; background:var(--surface2); border-radius:10px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .review-top { display:flex; align-items:center; justify-content:space-between; }
+  .review-user { font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .review-avatar {
+    width:24px; height:24px; border-radius:50%; background:var(--accent2);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
+  }
+  .stars { color:#ffd700; font-size:12px; }
+  .review-text { font-size:12px; color:var(--muted); line-height:1.5; }
+  .review-date { font-size:10px; color:var(--muted); }
+
+  /* ── CHAT PANEL ── */
+  #chat-panel {
+    position:absolute; top:0; right:0; bottom:0; z-index:300;
+    width:var(--panel-w); background:var(--surface);
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+    transform:translateX(100%); transition:.3s ease;
+  }
+  #chat-panel.open { transform:translateX(0); }
+  #chat-header {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px;
+  }
+  .chat-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; flex:1; }
+  .chat-online { font-size:11px; color:var(--accent); }
+
+  /* Room tabs */
+  #room-tabs {
+    padding:12px 16px; border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .room-section-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:600; margin-bottom:4px; }
+  .tab-group { display:flex; gap:6px; flex-wrap:wrap; }
+  .room-tab {
+    padding:5px 12px; border-radius:999px; font-size:11px; font-weight:600;
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--muted); cursor:pointer; transition:.2s;
+  }
+  .room-tab:hover, .room-tab.active { background:var(--accent); color:#000; border-color:var(--accent); }
+  .room-tab.active-blue { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+
+  /* Messages */
+  #messages {
+    flex:1; overflow-y:auto; padding:16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  #messages::-webkit-scrollbar { width:4px; }
+  #messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .msg { display:flex; gap:8px; align-items:flex-start; }
+  .msg-avatar {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff;
+  }
+  .msg-body { display:flex; flex-direction:column; gap:3px; flex:1; }
+  .msg-meta { display:flex; align-items:center; gap:8px; }
+  .msg-name { font-size:12px; font-weight:600; }
+  .msg-time { font-size:10px; color:var(--muted); }
+  .msg-car { font-size:10px; color:var(--accent2); font-weight:600; }
+  .msg-text { font-size:13px; color:var(--muted); line-height:1.5; }
+  .msg.mine { flex-direction:row-reverse; }
+  .msg.mine .msg-text {
+    background:var(--accent); color:#000; border-radius:12px 12px 2px 12px;
+    padding:8px 12px; display:inline-block; font-size:13px;
+  }
+  .msg.other .msg-text {
+    background:var(--surface2); border-radius:2px 12px 12px 12px;
+    padding:8px 12px; display:inline-block;
+  }
+
+  /* Chat input */
+  #chat-input-area {
+    padding:14px 16px; border-top:1px solid var(--border);
+    display:flex; gap:10px; align-items:center;
+  }
+  #chat-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    border-radius:999px; padding:10px 16px;
+    color:var(--text); font-size:13px; font-family:'Inter',sans-serif;
+    outline:none; transition:.2s;
+  }
+  #chat-input:focus { border-color:var(--accent); }
+  .send-btn {
+    width:38px; height:38px; border-radius:50%;
+    background:var(--accent); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:#000; transition:.2s; flex-shrink:0;
+  }
+  .send-btn:hover { transform:scale(1.05); }
+
+  /* ── REPORT MODAL ── */
+  #report-modal {
+    position:absolute; inset:0; z-index:500;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center;
+  }
+  #report-modal.open { display:flex; }
+  .modal-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:28px; width:360px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .modal-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; }
+  .modal-subtitle { font-size:13px; color:var(--muted); }
+  .report-options { display:flex; flex-direction:column; gap:8px; }
+  .report-option {
+    padding:12px 16px; border-radius:10px;
+    background:var(--surface2); border:1.5px solid var(--border);
+    cursor:pointer; font-size:13px; transition:.2s;
+    display:flex; align-items:center; gap:10px;
+  }
+  .report-option:hover { border-color:var(--warn); color:var(--warn); }
+  .report-option.selected { border-color:var(--warn); background:rgba(255,107,53,.1); color:var(--warn); }
+  .modal-textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:12px; color:var(--text); font-size:13px;
+    font-family:'Inter',sans-serif; resize:none; outline:none; height:90px;
+  }
+  .modal-textarea:focus { border-color:var(--accent); }
+  .modal-actions { display:flex; gap:10px; }
+  .modal-cancel {
+    flex:1; padding:12px; border-radius:10px;
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--muted); cursor:pointer; font-size:13px; transition:.2s;
+  }
+  .modal-submit {
+    flex:1; padding:12px; border-radius:10px;
+    background:var(--warn); border:none; color:#fff;
+    font-size:13px; font-weight:600; cursor:pointer; transition:.2s;
+  }
+  .modal-submit:hover { opacity:.9; }
+
+  /* ── LANG DROPDOWN ── */
+  #lang-menu {
+    position:absolute; top:62px; right:20px; z-index:400;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:8px;
+    width:220px; display:none;
+    grid-template-columns:1fr 1fr; gap:4px;
+  }
+  #lang-menu.open { display:grid; }
+  .lang-opt {
+    padding:8px 12px; border-radius:8px; cursor:pointer;
+    font-size:12px; transition:.15s; display:flex; gap:6px;
+    align-items:center;
+  }
+  .lang-opt:hover { background:var(--surface2); }
+  .lang-opt.active { color:var(--accent); font-weight:600; }
+
+  /* ── TOAST ── */
+  #toast {
+    position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+    z-index:600; pointer-events:none;
+    background:var(--accent); color:#000; font-weight:600; font-size:13px;
+    padding:10px 20px; border-radius:999px;
+    opacity:0; transition:.3s;
+  }
+  #toast.show { opacity:1; }
+
+  /* FAB */
+  #fab-chat {
+    position:absolute; bottom:110px; right:20px; z-index:100;
+    width:52px; height:52px; border-radius:50%;
+    background:var(--accent); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; box-shadow:0 4px 20px rgba(0,229,160,.4);
+    transition:.2s;
+  }
+  #fab-chat:hover { transform:scale(1.08); }
+  .notif-dot {
+    position:absolute; top:6px; right:6px;
+    width:10px; height:10px; border-radius:50%;
+    background:#ff4d4d; border:2px solid var(--bg);
+  }
+</style>
 </head>
 <body>
 
-  <!-- LANG BAR -->
-  <div id="lang-bar">
-    <div class="lang-inner">
-      <button class="lang-btn" data-lang="ko">🇰🇷 KO</button>
-      <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
-      <button class="lang-btn" data-lang="zh">🇨🇳 中文</button>
-      <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
-      <button class="lang-btn" data-lang="fr">🇫🇷 FR</button>
-      <button class="lang-btn" data-lang="de">🇩🇪 DE</button>
-      <button class="lang-btn" data-lang="es">🇪🇸 ES</button>
-      <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
-      <button class="lang-btn" data-lang="pt">🇧🇷 PT</button>
-      <button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
-      <button class="lang-btn" data-lang="ar">🇸🇦 AR</button>
-      <button class="lang-btn" data-lang="hi">🇮🇳 HI</button>
-      <button class="lang-btn" data-lang="nl">🇳🇱 NL</button>
-      <button class="lang-btn" data-lang="sv">🇸🇪 SV</button>
-      <button class="lang-btn" data-lang="no">🇳🇴 NO</button>
-      <button class="lang-btn" data-lang="tr">🇹🇷 TR</button>
-      <button class="lang-btn" data-lang="th">🇹🇭 TH</button>
-      <button class="lang-btn" data-lang="id">🇮🇩 ID</button>
-      <button class="lang-btn" data-lang="pl">🇵🇱 PL</button>
-      <button class="lang-btn" data-lang="vi">🇻🇳 VI</button>
+<!-- MAP -->
+<div id="map" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <a href="/about" style="text-decoration:none"><div class="logo">EMC<span> ⚡</span></div></a>
+  <div id="searchbar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="충전소 검색 / Search chargers..." />
+  </div>
+  <div class="top-actions">
+    <button class="btn-icon" id="lang-btn" onclick="toggleLang()">🌐 KO</button>
+    <button class="btn-icon" title="내 위치" onclick="goToMyLocation()">📍</button>
+    <a href="/about" class="btn-icon" title="About EMC" style="text-decoration:none;font-size:12px;font-weight:600;color:var(--text)">EMC</a>
+  </div>
+</div>
+
+<!-- LANG MENU -->
+<div id="lang-menu">
+  <div class="lang-opt active" onclick="setLang('ko')">🇰🇷 한국어</div>
+  <div class="lang-opt" onclick="setLang('en')">🇺🇸 English</div>
+  <div class="lang-opt" onclick="setLang('ja')">🇯🇵 日本語</div>
+  <div class="lang-opt" onclick="setLang('zh')">🇨🇳 中文</div>
+  <div class="lang-opt" onclick="setLang('es')">🇪🇸 Español</div>
+  <div class="lang-opt" onclick="setLang('fr')">🇫🇷 Français</div>
+  <div class="lang-opt" onclick="setLang('de')">🇩🇪 Deutsch</div>
+  <div class="lang-opt" onclick="setLang('pt')">🇧🇷 Português</div>
+  <div class="lang-opt" onclick="setLang('ar')">🇸🇦 العربية</div>
+  <div class="lang-opt" onclick="setLang('hi')">🇮🇳 हिंदी</div>
+  <div class="lang-opt" onclick="setLang('th')">🇹🇭 ไทย</div>
+  <div class="lang-opt" onclick="setLang('vi')">🇻🇳 Tiếng Việt</div>
+  <div class="lang-opt" onclick="setLang('id')">🇮🇩 Bahasa</div>
+  <div class="lang-opt" onclick="setLang('tr')">🇹🇷 Türkçe</div>
+  <div class="lang-opt" onclick="setLang('ru')">🇷🇺 Русский</div>
+  <div class="lang-opt" onclick="setLang('nl')">🇳🇱 Nederlands</div>
+  <div class="lang-opt" onclick="setLang('it')">🇮🇹 Italiano</div>
+  <div class="lang-opt" onclick="setLang('sv')">🇸🇪 Svenska</div>
+  <div class="lang-opt" onclick="setLang('pl')">🇵🇱 Polski</div>
+  <div class="lang-opt" onclick="setLang('uk')">🇺🇦 Українська</div>
+</div>
+
+<!-- FILTER BAR -->
+<div id="filterbar">
+  <div class="filter-pill active" onclick="toggleFilter(this,'all')"><span class="dot dot-green"></span> <span data-i18n="filter_all">전체</span></div>
+  <div class="filter-pill" onclick="toggleFilter(this,'ok')"><span class="dot dot-green"></span> <span data-i18n="filter_ok">정상</span></div>
+  <div class="filter-pill" onclick="toggleFilter(this,'busy')"><span class="dot dot-yellow"></span> <span data-i18n="filter_busy">혼잡</span></div>
+  <div class="filter-pill" onclick="toggleFilter(this,'broken')"><span class="dot dot-red"></span> <span data-i18n="filter_broken">고장</span></div>
+  <div class="filter-pill" onclick="toggleFilter(this,'dc')">⚡ <span data-i18n="filter_dc">급속 DC</span></div>
+  <div class="filter-pill" onclick="toggleFilter(this,'ac')">🔌 <span data-i18n="filter_ac">완속 AC</span></div>
+</div>
+
+<!-- LEGEND -->
+<div id="legend">
+  <div class="legend-title" data-i18n="legend">범례</div>
+  <div class="legend-item"><div class="legend-dot l-ok"></div> <span data-i18n="status_ok">정상 운영</span></div>
+  <div class="legend-item"><div class="legend-dot l-busy"></div> <span data-i18n="status_busy">혼잡</span></div>
+  <div class="legend-item"><div class="legend-dot l-broken"></div> <span data-i18n="status_broken">고장/점검</span></div>
+  <div class="legend-item"><div class="legend-dot l-dc"></div> <span data-i18n="status_dc">DC 급속</span></div>
+</div>
+
+<!-- STATS BAR -->
+<div id="statsbar">
+  <div class="stat-item">
+    <div class="stat-num" id="stat-total">2,847</div>
+    <div class="stat-label" data-i18n="stat_total">전체 충전소</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="color:#00e5a0" id="stat-ok">2,103</div>
+    <div class="stat-label" data-i18n="stat_ok">정상</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="color:#ffd700" id="stat-busy">491</div>
+    <div class="stat-label" data-i18n="stat_busy">혼잡</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" style="color:#ff4d4d" id="stat-broken">253</div>
+    <div class="stat-label" data-i18n="stat_broken">고장</div>
+  </div>
+</div>
+
+<!-- FAB CHAT -->
+<button id="fab-chat" onclick="openChat()">
+  💬
+  <div class="notif-dot"></div>
+</button>
+
+<!-- ── CHARGER DETAIL PANEL ── -->
+<div id="panel">
+  <div id="panel-header">
+    <button class="panel-back" onclick="closePanel()">←</button>
+    <div>
+      <div class="panel-title" id="p-name">스타벅스 강남점 충전소</div>
+      <div class="panel-subtitle" id="p-addr">서울 강남구 테헤란로 101</div>
+    </div>
+  </div>
+  <div id="panel-body">
+    <!-- Status -->
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="status-badge status-ok" id="p-status">✅ 정상 운영</span>
+      <span style="font-size:12px;color:var(--muted)" id="p-updated">3분 전 업데이트</span>
+    </div>
+
+    <!-- Info grid -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label" data-i18n="speed">충전 속도</div>
+        <div class="info-card-val" id="p-speed">⚡ 350kW</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label" data-i18n="slots">슬롯</div>
+        <div class="info-card-val" id="p-slots">4 / 6</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label" data-i18n="price">요금</div>
+        <div class="info-card-val" id="p-price">₩350/kWh</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label" data-i18n="network">네트워크</div>
+        <div class="info-card-val" id="p-net" style="font-size:13px">KEPCO</div>
+      </div>
+    </div>
+
+    <!-- Connectors -->
+    <div>
+      <div class="photo-label" data-i18n="connectors">커넥터 타입</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px" id="p-connectors">
+        <div class="connector-item">
+          <div><div class="connector-name">CCS2 (DC)</div><div class="connector-kw">350 kW</div></div>
+          <div class="connector-avail">2 사용가능</div>
+        </div>
+        <div class="connector-item">
+          <div><div class="connector-name">CHAdeMO</div><div class="connector-kw">100 kW</div></div>
+          <div class="connector-avail">1 사용가능</div>
+        </div>
+        <div class="connector-item">
+          <div><div class="connector-name">AC Type 2</div><div class="connector-kw">22 kW</div></div>
+          <div class="connector-avail" style="color:#ffd700">1 사용중</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos -->
+    <div class="photo-section">
+      <div class="photo-label" data-i18n="photos">현장 사진</div>
+      <div class="photo-grid">
+        <div class="photo-thumb" style="background:linear-gradient(135deg,#1a3a2a,#0d2818)">🔋</div>
+        <div class="photo-thumb" style="background:linear-gradient(135deg,#1a1a3a,#0d0d28)">⚡</div>
+        <div class="upload-thumb photo-thumb" onclick="uploadPhoto()">📷</div>
+      </div>
+    </div>
+
+    <!-- Report -->
+    <button class="report-btn" onclick="openReport()">
+      🚨 <span data-i18n="report_btn">고장 / 문제 신고하기</span>
+    </button>
+
+    <!-- Reviews -->
+    <div>
+      <div class="photo-label" data-i18n="reviews">유저 리뷰</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <div class="review-item">
+          <div class="review-top">
+            <div class="review-user">
+              <div class="review-avatar" style="background:#6366f1">T</div>
+              Tesla_KR_Fan
+            </div>
+            <div class="stars">★★★★★</div>
+          </div>
+          <div class="review-text">350kW DC 진짜 빠름. 20분에 80% 충전했어요. 주차공간도 넓고 깨끗함 👍</div>
+          <div class="review-date">2025.06.28</div>
+        </div>
+        <div class="review-item">
+          <div class="review-top">
+            <div class="review-user">
+              <div class="review-avatar" style="background:#f59e0b">I</div>
+              IONIQ5_Seoul
+            </div>
+            <div class="stars">★★★☆☆</div>
+          </div>
+          <div class="review-text">CHAdeMO 1번기 가끔 오류 뜸. DC 2번은 괜찮아요.</div>
+          <div class="review-date">2025.06.15</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigate -->
+    <button style="width:100%;padding:13px;border-radius:10px;background:var(--accent2);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:4px" onclick="navigate()">
+      🗺️ <span data-i18n="navigate">길 안내</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── CHAT PANEL ── -->
+<div id="chat-panel">
+  <div id="chat-header">
+    <button class="panel-back" onclick="closeChat()">←</button>
+    <div style="flex:1">
+      <div class="chat-title">💬 EMC 커뮤니티</div>
+      <div class="chat-online">● 1,284명 접속중</div>
     </div>
   </div>
 
-  <!-- NAV -->
-  <nav id="nav">
-    <div class="nav-inner">
-      <a class="nav-logo" href="#">EMC</a>
-      <ul class="nav-links">
-        <li><a href="#about"   data-i18n="nav_about">소개</a></li>
-        <li><a href="#event"   data-i18n="nav_event">행사</a></li>
-        <li><a href="#roadmap" data-i18n="nav_roadmap">로드맵</a></li>
-        <li><a href="#founder" data-i18n="nav_founder">설립자</a></li>
-        <li><a href="/map" class="nav-map-btn" style="background:rgba(0,229,160,0.15);color:#00e5a0;border:1px solid rgba(0,229,160,0.4);padding:7px 16px;border-radius:999px;font-weight:600;font-size:13px;transition:.2s;" onmouseover="this.style.background='rgba(0,229,160,0.3)'" onmouseout="this.style.background='rgba(0,229,160,0.15)'">⚡ 충전소 맵</a></li>
-        <li><a href="#contact" class="nav-cta" data-i18n="nav_cta">참가 신청</a></li>
-      </ul>
-      <button class="nav-hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  <div id="room-tabs">
+    <div class="room-section-label" data-i18n="age_rooms">연령대별 방</div>
+    <div class="tab-group" id="age-tabs">
+      <div class="room-tab" onclick="switchRoom('20s',this)">20대</div>
+      <div class="room-tab active" onclick="switchRoom('30s',this)">30대</div>
+      <div class="room-tab" onclick="switchRoom('40s',this)">40대</div>
+      <div class="room-tab" onclick="switchRoom('50s',this)">50대</div>
+      <div class="room-tab" onclick="switchRoom('60s',this)">60대+</div>
     </div>
-  </nav>
+    <div class="room-section-label" style="margin-top:4px" data-i18n="car_rooms">차종별 방</div>
+    <div class="tab-group" id="car-tabs">
+      <div class="room-tab active-blue" onclick="switchCarRoom('tesla',this)">Tesla</div>
+      <div class="room-tab" onclick="switchCarRoom('hyundai',this)">현대/기아</div>
+      <div class="room-tab" onclick="switchCarRoom('bmw',this)">BMW</div>
+      <div class="room-tab" onclick="switchCarRoom('porsche',this)">Porsche</div>
+      <div class="room-tab" onclick="switchCarRoom('lucid',this)">Lucid</div>
+      <div class="room-tab" onclick="switchCarRoom('other',this)">기타 EV</div>
+    </div>
+  </div>
 
-  <!-- HERO -->
-  <section id="hero">
-    <div class="hero-bg">
-      <div class="grid-overlay"></div>
-      <div class="glow glow-1"></div>
-      <div class="glow glow-2"></div>
-      <div class="particles" id="particles"></div>
-    </div>
-    <div class="hero-content">
-      <div class="hero-label" data-i18n="hero_label">TECH OPEN INNOVATION · KOREA 2026</div>
-      <h1 class="hero-title">
-        <span class="hero-emc">EMC</span>
-        <span class="hero-sub">Electric Mobility Competition</span>
-      </h1>
-      <p class="hero-formula">E = mc²</p>
-      <p class="hero-tagline">
-        <span data-i18n="hero_tagline1">전기자동차 시대,</span><br>
-        <strong data-i18n="hero_tagline2">한국이 만드는 글로벌 축제</strong>
-      </p>
-      <div class="hero-stats">
-        <div class="stat"><span class="stat-num">403<sup>+</sup></span><span class="stat-lbl" data-i18n="stat1_lbl">대 기네스 도전</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-num">200</span><span class="stat-lbl" data-i18n="stat2_lbl">개국 국기 래핑</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat"><span class="stat-num">2026</span><span class="stat-lbl" data-i18n="stat3_lbl">파일럿 목표</span></div>
-      </div>
-      <div class="hero-btns">
-        <a href="#event"   class="btn-primary" data-i18n="btn_learn">행사 알아보기</a>
-        <a href="#contact" class="btn-ghost"   data-i18n="btn_register">참가 신청하기</a>
-      </div>
-    </div>
-    <div class="hero-scroll">scroll ↓</div>
-  </section>
+  <div id="messages"></div>
 
-  <!-- ABOUT -->
-  <section id="about">
-    <div class="container">
-      <div class="section-label" data-i18n="about_label">ABOUT EMC</div>
-      <h2 class="section-title" data-i18n="about_title">왜 EMC인가?</h2>
-      <p class="section-desc" data-i18n="about_desc">F1이 한 영국인의 아이디어에서 수조 원 규모의 글로벌 스포츠로 성장한 것처럼,
-EMC는 전기차 시대의 문화 IP를 한국이 선점하는 것을 목표로 합니다.</p>
-      <div class="about-grid">
-        <div class="about-card" data-reveal><div class="card-icon">⚡</div><h3 data-i18n="card1_title">전기차 시대의 도래</h3><p data-i18n="card1_body">기술 패권은 미국·중국이 가져갔지만, 전기차 문화와 축제 IP는 아직 주인이 없습니다.</p></div>
-        <div class="about-card" data-reveal><div class="card-icon">🏁</div><h3 data-i18n="card2_title">F1이 준 영감</h3><p data-i18n="card2_body">F1은 한 사람의 비전에서 시작되었습니다. EMC는 전기차 세계의 F1이 될 것입니다.</p></div>
-        <div class="about-card" data-reveal><div class="card-icon">🌏</div><h3 data-i18n="card3_title">한국만이 할 수 있는 것</h3><p data-i18n="card3_body">판문점·파주라는 세계 유일의 평화 상징 공간, K-컬처 파워, 전기차 제조 강국.</p></div>
-        <div class="about-card" data-reveal><div class="card-icon">📐</div><h3 data-i18n="card4_title">E = mc² 철학</h3><p data-i18n="card4_body">작은 아이디어(m)가 연결과 문화의 제곱(c²)을 만나 세상을 바꾸는 에너지(E)가 됩니다.</p></div>
-      </div>
-    </div>
-  </section>
+  <div id="chat-input-area">
+    <input type="text" id="chat-input" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter')sendMsg()" />
+    <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
 
-  <!-- EVENT -->
-  <section id="event">
-    <div class="event-bg"></div>
-    <div class="container">
-      <div class="section-label" data-i18n="event_label">FLAGSHIP EVENT</div>
-      <h2 class="section-title light" data-i18n="event_title">기네스 도전 국제 전기차 페스티벌</h2>
-      <p class="section-desc light" data-i18n="event_desc">전세계 전기차 오너가 한국에 모여 기네스 세계기록에 도전합니다.</p>
-      <div class="route-wrap">
-        <div class="route-steps">
-          <div class="route-step" data-reveal>
-            <div class="route-dot">1</div>
-            <div class="route-card"><h4 data-i18n="route1_title">인천 출발</h4><p data-i18n="route1_body">국제공항 인근 집결<br>200개국 국기 래핑<br>개막식</p></div>
-          </div>
-          <div class="route-arrow">→</div>
-          <div class="route-step" data-reveal>
-            <div class="route-dot">2</div>
-            <div class="route-card"><h4 data-i18n="route2_title">서울 한강</h4><p data-i18n="route2_body">한강 드라이브 코스<br>주요 미디어 구간<br>글로벌 중계</p></div>
-          </div>
-          <div class="route-arrow">→</div>
-          <div class="route-step highlight" data-reveal>
-            <div class="route-dot">★</div>
-            <div class="route-card"><h4 data-i18n="route3_title">파주 도착</h4><p data-i18n="route3_body">평화의 상징 지역<br>기네스 공식 기록<br>폐막식</p></div>
-          </div>
-        </div>
-      </div>
-      <div class="guinness-box" data-reveal>
-        <div class="guinness-record">
-          <div class="record-item">
-            <span class="record-num">402</span>
-            <span class="record-lbl" data-i18n="dk_record">2016년 덴마크 기록</span>
-          </div>
-          <div class="record-vs">VS</div>
-          <div class="record-item target">
-            <span class="record-num">403<sup>+</sup></span>
-            <span class="record-lbl" data-i18n="emc_target">EMC 목표 — 세계신기록</span>
-          </div>
-        </div>
-        <p class="guinness-note" data-i18n="guinness_note">전세계 200개국 국기를 래핑한 전기차들이 한국의 평화 루트를 달립니다</p>
-      </div>
+<!-- ── REPORT MODAL ── -->
+<div id="report-modal">
+  <div class="modal-box">
+    <div class="modal-title">🚨 충전소 신고</div>
+    <div class="modal-subtitle" id="modal-charger-name">스타벅스 강남점 충전소</div>
+    <div class="report-options">
+      <div class="report-option" onclick="selectReport(this,'broken')">🔧 충전기 고장 / 작동 불가</div>
+      <div class="report-option" onclick="selectReport(this,'cable')">🔌 케이블 파손</div>
+      <div class="report-option" onclick="selectReport(this,'blocked')">🚗 일반 차량 주차 (점거)</div>
+      <div class="report-option" onclick="selectReport(this,'display')">📺 디스플레이 오류</div>
+      <div class="report-option" onclick="selectReport(this,'payment')">💳 결제 오류</div>
+      <div class="report-option" onclick="selectReport(this,'other')">📝 기타</div>
     </div>
-  </section>
-
-  <!-- ROADMAP -->
-  <section id="roadmap">
-    <div class="container">
-      <div class="section-label" data-i18n="rm_label">ROADMAP</div>
-      <h2 class="section-title" data-i18n="rm_title">단계별 추진 계획</h2>
-      <div class="timeline">
-        <div class="tl-item" data-reveal>
-          <div class="tl-year">2026<br><small>상반기</small></div>
-          <div class="tl-dot"></div>
-          <div class="tl-content"><h4 data-i18n="phase1_title">기반 구축</h4><ul id="phase1_list"></ul></div>
-        </div>
-        <div class="tl-item" data-reveal>
-          <div class="tl-year">2026<br><small>가을</small></div>
-          <div class="tl-dot"></div>
-          <div class="tl-content"><h4 data-i18n="phase2_title">파일럿 행사</h4><ul id="phase2_list"></ul></div>
-        </div>
-        <div class="tl-item highlight" data-reveal>
-          <div class="tl-year">2027</div>
-          <div class="tl-dot"></div>
-          <div class="tl-content"><h4 data-i18n="phase3_title">공식 1회 대회 🏆</h4><ul id="phase3_list"></ul></div>
-        </div>
-        <div class="tl-item" data-reveal>
-          <div class="tl-year">2028<br><small>~</small></div>
-          <div class="tl-dot"></div>
-          <div class="tl-content"><h4 data-i18n="phase4_title">글로벌 IP화</h4><ul id="phase4_list"></ul></div>
-        </div>
-      </div>
+    <textarea class="modal-textarea" placeholder="추가 설명 (선택사항)..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeReport()">취소</button>
+      <button class="modal-submit" onclick="submitReport()">신고 제출</button>
     </div>
-  </section>
+  </div>
+</div>
 
-  <!-- WHY KOREA -->
-  <section id="why-korea">
-    <div class="container">
-      <div class="section-label" data-i18n="why_label">WHY KOREA</div>
-      <h2 class="section-title" data-i18n="why_title">한국이어야 하는 이유</h2>
-      <div class="why-grid">
-        <div class="why-item" data-reveal><span class="why-icon">🚗</span><h4 data-i18n="why1_title">전기차 제조 강국</h4><p data-i18n="why1_body">현대·기아·삼성SDI·SK온 등 세계 Top5 EV 생태계</p></div>
-        <div class="why-item" data-reveal><span class="why-icon">🌏</span><h4 data-i18n="why2_title">K-컬처 글로벌 파워</h4><p data-i18n="why2_body">K-팝·K-드라마로 구축된 전세계 미디어 네트워크</p></div>
-        <div class="why-item" data-reveal><span class="why-icon">☮️</span><h4 data-i18n="why3_title">판문점·파주 루트</h4><p data-i18n="why3_body">세계 어느 나라도 따라올 수 없는 평화+미래의 상징</p></div>
-        <div class="why-item" data-reveal><span class="why-icon">📡</span><h4 data-i18n="why4_title">IT 인프라 세계 1위</h4><p data-i18n="why4_body">5G·AI·스마트시티로 최첨단 페스티벌 운영 가능</p></div>
-        <div class="why-item" data-reveal><span class="why-icon">⏰</span><h4 data-i18n="why5_title">골든타임</h4><p data-i18n="why5_body">EV 대중화 완성, 문화 IP 선점 경쟁 시작 전</p></div>
-        <div class="why-item" data-reveal><span class="why-icon">🏆</span><h4 data-i18n="why6_title">선점 효과</h4><p data-i18n="why6_body">F1처럼 최초가 곧 영구적 표준이 됩니다</p></div>
-      </div>
-    </div>
-  </section>
+<!-- TOAST -->
+<div id="toast"></div>
 
-  <!-- FOUNDER -->
-  <section id="founder">
-    <div class="container">
-      <div class="section-label" data-i18n="founder_label">FOUNDER</div>
-      <h2 class="section-title" data-i18n="founder_title">설립자</h2>
-      <div class="founder-wrap" data-reveal>
-        <div class="founder-avatar">KK</div>
-        <div class="founder-info">
-          <h3 class="founder-name">Kent Kim <span class="founder-kr">김형섭</span></h3>
-          <p class="founder-title" data-i18n="founder_role">Founder & Chairman, EMC International</p>
-          <div class="founder-creds">
-            <div class="cred"><span class="cred-icon">🎓</span><span data-i18n="cred1">Harvard University, Economics</span></div>
-            <div class="cred"><span class="cred-icon">📚</span><span data-i18n="cred2">21권의 저서</span></div>
-            <div class="cred"><span class="cred-icon">🌍</span><span data-i18n="cred3">미국 국적 · 글로벌 네트워크</span></div>
-            <div class="cred"><span class="cred-icon">💡</span><span data-i18n="cred4">2020년부터 EMC 아이디어 구상</span></div>
-          </div>
-          <blockquote class="founder-quote" data-i18n="quote">"전기차 산업의 패권은 이미 정해졌지만,<br>전기차 문화의 주인은 아직 정해지지 않았습니다."</blockquote>
-        </div>
-      </div>
-    </div>
-  </section>
+<script>
+// ── I18N ──
+const i18n = {
+  ko: { filter_all:'전체', filter_ok:'정상', filter_busy:'혼잡', filter_broken:'고장', filter_dc:'급속 DC', filter_ac:'완속 AC', legend:'범례', status_ok:'정상 운영', status_busy:'혼잡', status_broken:'고장/점검', status_dc:'DC 급속', stat_total:'전체 충전소', stat_ok:'정상', stat_busy:'혼잡', stat_broken:'고장', speed:'충전 속도', slots:'슬롯', price:'요금', network:'네트워크', connectors:'커넥터 타입', photos:'현장 사진', report_btn:'고장 / 문제 신고하기', reviews:'유저 리뷰', navigate:'길 안내', age_rooms:'연령대별 방', car_rooms:'차종별 방' },
+  en: { filter_all:'All', filter_ok:'Available', filter_busy:'Busy', filter_broken:'Broken', filter_dc:'DC Fast', filter_ac:'AC Slow', legend:'Legend', status_ok:'Available', status_busy:'Busy', status_broken:'Out of Order', status_dc:'DC Fast', stat_total:'Total Stations', stat_ok:'Available', stat_busy:'Busy', stat_broken:'Broken', speed:'Charge Speed', slots:'Slots', price:'Price', network:'Network', connectors:'Connectors', photos:'Photos', report_btn:'Report an Issue', reviews:'Reviews', navigate:'Navigate', age_rooms:'Age Rooms', car_rooms:'Car Rooms' },
+  ja: { filter_all:'全て', filter_ok:'利用可能', filter_busy:'混雑', filter_broken:'故障', filter_dc:'急速DC', filter_ac:'普通AC', legend:'凡例', status_ok:'利用可能', status_busy:'混雑', status_broken:'故障中', status_dc:'DC急速', stat_total:'総充電所', stat_ok:'利用可能', stat_busy:'混雑', stat_broken:'故障', speed:'充電速度', slots:'スロット', price:'料金', network:'ネットワーク', connectors:'コネクタ', photos:'現場写真', report_btn:'問題を報告', reviews:'レビュー', navigate:'ナビ', age_rooms:'年代別チャット', car_rooms:'車種別チャット' },
+  zh: { filter_all:'全部', filter_ok:'可用', filter_busy:'繁忙', filter_broken:'故障', filter_dc:'直流快充', filter_ac:'交流慢充', legend:'图例', status_ok:'正常运营', status_busy:'繁忙', status_broken:'故障维修', status_dc:'DC快充', stat_total:'充电站总数', stat_ok:'正常', stat_busy:'繁忙', stat_broken:'故障', speed:'充电速度', slots:'插座', price:'价格', network:'网络', connectors:'接口类型', photos:'现场照片', report_btn:'报告问题', reviews:'用户评价', navigate:'导航', age_rooms:'年龄段聊天室', car_rooms:'车型聊天室' }
+};
+let currentLang = 'ko';
+function setLang(lang) {
+  currentLang = lang;
+  const t = i18n[lang] || i18n.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  const names = { ko:'KO', en:'EN', ja:'JP', zh:'ZH', es:'ES', fr:'FR', de:'DE', pt:'PT', ar:'AR', hi:'HI', th:'TH', vi:'VI', id:'ID', tr:'TR', ru:'RU', nl:'NL', it:'IT', sv:'SV', pl:'PL', uk:'UK' };
+  document.getElementById('lang-btn').innerHTML = '🌐 ' + (names[lang]||'EN');
+  document.querySelectorAll('.lang-opt').forEach(el => el.classList.remove('active'));
+  event && event.target && event.target.classList.add('active');
+  closeLang();
+  showToast(lang === 'ko' ? '언어가 변경되었습니다' : 'Language changed');
+}
+function toggleLang() { document.getElementById('lang-menu').classList.toggle('open'); }
+function closeLang() { document.getElementById('lang-menu').classList.remove('open'); }
 
-  <!-- CONTACT -->
-  
-  <!-- MAP CTA -->
-  <section id="map-cta" style="padding:80px 20px;text-align:center;background:linear-gradient(135deg,rgba(0,229,160,0.05),rgba(0,102,255,0.05));border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);">
-    <div style="max-width:600px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:20px;">
-      <div style="font-size:48px;">🗺️</div>
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,52px);letter-spacing:2px;color:#f0f4ff;" data-i18n="map_cta_title">전세계 EV 충전소 지도</h2>
-      <p style="color:#6b7a99;font-size:16px;line-height:1.7;max-width:480px;" data-i18n="map_cta_desc">전세계 전기차 충전소를 실시간으로 확인하세요. 충전소 상태 신고, 사진 업로드, EV 오너 커뮤니티 채팅까지.</p>
-      <a href="/map" style="display:inline-flex;align-items:center;gap:10px;background:#00e5a0;color:#000;font-weight:700;font-size:15px;padding:14px 32px;border-radius:999px;text-decoration:none;transition:.2s;box-shadow:0 0 30px rgba(0,229,160,0.3);" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
-        ⚡ 충전소 맵 보기
-      </a>
-    </div>
-  </section>
+// ── MAP SETUP ──
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      'osm': { type:'raster', tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap © CartoDB' }
+    },
+    layers: [{ id:'osm', type:'raster', source:'osm', paint:{ 'raster-opacity':1 } }]
+  },
+  center: [127.0276, 37.4979],
+  zoom: 12
+});
+map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
 
-<section id="contact">
-    <div class="contact-bg"><div class="glow glow-3"></div></div>
-    <div class="container">
-      <div class="section-label" data-i18n="contact_label">JOIN US</div>
-      <h2 class="section-title light" data-i18n="contact_title">함께 만들어 가세요</h2>
-      <p class="section-desc light" data-i18n="contact_desc">스폰서십, 파트너십, 참가 신청 등 문의를 환영합니다</p>
-      <div class="contact-grid">
-        <div class="contact-card" data-reveal><div class="contact-icon">🏢</div><h4 data-i18n="ct1_title">스폰서십</h4><p data-i18n="ct1_body">타이틀 스폰서·공식 파트너 문의</p></div>
-        <div class="contact-card" data-reveal><div class="contact-icon">🚗</div><h4 data-i18n="ct2_title">참가 신청</h4><p data-i18n="ct2_body">전기차 오너 개인·팀 참가 등록</p></div>
-        <div class="contact-card" data-reveal><div class="contact-icon">📺</div><h4 data-i18n="ct3_title">미디어 협력</h4><p data-i18n="ct3_body">취재·중계·콘텐츠 파트너십</p></div>
-        <div class="contact-card" data-reveal><div class="contact-icon">🤝</div><h4 data-i18n="ct4_title">기관 협력</h4><p data-i18n="ct4_body">지자체·정부기관 MOU 문의</p></div>
-      </div>
-      <div class="contact-form-wrap" data-reveal>
-        <form class="contact-form" id="contactForm" action="https://formspree.io/f/mdawvarp" method="POST">
-          <div class="form-row">
-            <input type="text"  data-i18n="form_name"  placeholder="성함"   name="name" required />
-            <input type="email" data-i18n="form_email" placeholder="이메일" name="email" required />
-          </div>
-          <select name="inquiry_type" required>
-            <option value="" disabled selected data-i18n="form_select">문의 유형 선택</option>
-            <option data-i18n="ct1_title">스폰서십</option>
-            <option data-i18n="ct2_title">참가 신청</option>
-            <option data-i18n="ct3_title">미디어 협력</option>
-            <option data-i18n="ct4_title">기관 협력</option>
-          </select>
-          <textarea data-i18n="form_msg" placeholder="메시지를 입력해주세요" name="message" rows="4" required></textarea>
-          <button type="submit" class="btn-primary full" id="submitBtn" data-i18n="form_submit">문의하기 →</button>
-        </form>
+// ── MOCK CHARGER DATA ──
+const chargers = [
+  { id:1, name:'스타벅스 강남점', addr:'서울 강남구 테헤란로 101', lat:37.5005, lng:127.0345, status:'ok', speed:350, type:'DC', net:'KEPCO', slots:'4/6', price:'₩350/kWh' },
+  { id:2, name:'코엑스 주차장 B2', addr:'서울 강남구 봉은사로 524', lat:37.5116, lng:127.0595, status:'busy', speed:100, type:'DC', net:'환경부', slots:'2/8', price:'₩320/kWh' },
+  { id:3, name:'현대백화점 목동점', addr:'서울 양천구 목동동로 293', lat:37.5258, lng:126.8750, status:'ok', speed:50, type:'AC', net:'ChargeV', slots:'3/4', price:'₩280/kWh' },
+  { id:4, name:'롯데월드타워 P6', addr:'서울 송파구 올림픽로 300', lat:37.5125, lng:127.1025, status:'broken', speed:350, type:'DC', net:'Tesla', slots:'0/4', price:'₩370/kWh' },
+  { id:5, name:'인천공항 제1터미널', addr:'인천 중구 공항로 272', lat:37.4491, lng:126.4508, status:'ok', speed:350, type:'DC', net:'KEPCO', slots:'6/10', price:'₩340/kWh' },
+  { id:6, name:'판교 카카오 사옥', addr:'경기 성남시 분당구 판교역로 166', lat:37.3995, lng:127.1080, status:'ok', speed:150, type:'DC', net:'카카오', slots:'5/6', price:'₩300/kWh' },
+  { id:7, name:'부산 해운대 그랜드호텔', addr:'부산 해운대구 해운대해변로 24', lat:35.1588, lng:129.1590, status:'busy', speed:100, type:'DC', net:'한국EV', slots:'1/4', price:'₩360/kWh' },
+  { id:8, name:'대전 갤러리아 타임월드', addr:'대전 서구 대덕대로 211', lat:36.3504, lng:127.3845, status:'ok', speed:50, type:'AC', net:'환경부', slots:'2/3', price:'₩290/kWh' },
+  { id:9, name:'제주 중문 테디베어', addr:'제주 서귀포시 중문관광로 110', lat:33.2512, lng:126.4128, status:'ok', speed:200, type:'DC', net:'제주EV', slots:'3/5', price:'₩310/kWh' },
+  { id:10, name:'광주 신세계백화점', addr:'광주 서구 무진대로 932', lat:35.1495, lng:126.8526, status:'broken', speed:100, type:'DC', net:'환경부', slots:'0/3', price:'₩320/kWh' },
+  // Global
+  { id:11, name:'Supercharger Tokyo Shibuya', addr:'Shibuya, Tokyo, Japan', lat:35.6580, lng:139.7016, status:'ok', speed:250, type:'DC', net:'Tesla', slots:'8/12', price:'¥75/kWh' },
+  { id:12, name:'Ionity Frankfurt A3', addr:'Frankfurt, Germany', lat:50.1109, lng:8.6821, status:'ok', speed:350, type:'DC', net:'Ionity', slots:'6/6', price:'€0.69/kWh' },
+  { id:13, name:'Electrify America LA', addr:'Los Angeles, CA, USA', lat:34.0522, lng:-118.2437, status:'busy', speed:350, type:'DC', net:'EA', slots:'3/8', price:'$0.43/kWh' },
+  { id:14, name:'BP Pulse London City', addr:'London, UK', lat:51.5074, lng:-0.1278, status:'ok', speed:150, type:'DC', net:'BP Pulse', slots:'4/6', price:'£0.79/kWh' },
+  { id:15, name:'Chargemap Paris Arc', addr:'Paris, France', lat:48.8566, lng:2.3522, status:'ok', speed:50, type:'AC', net:'Chargemap', slots:'2/4', price:'€0.45/kWh' },
+];
+
+const colorMap = { ok:'#00e5a0', busy:'#ffd700', broken:'#ff4d4d' };
+
+map.on('load', () => {
+  chargers.forEach(c => {
+    const el = document.createElement('div');
+    el.style.cssText = `
+      width:36px; height:36px; border-radius:50%; 
+      background:${colorMap[c.status]}; 
+      border:3px solid rgba(255,255,255,0.25);
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; cursor:pointer;
+      box-shadow:0 0 12px ${colorMap[c.status]}66;
+      transition:.2s;
+    `;
+    el.innerHTML = c.type === 'DC' ? '⚡' : '🔌';
+    el.title = c.name;
+    el.addEventListener('mouseenter', () => { el.style.transform='scale(1.2)'; });
+    el.addEventListener('mouseleave', () => { el.style.transform='scale(1)'; });
+    el.addEventListener('click', () => openPanel(c));
+    new maplibregl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
+  });
+});
+
+function goToMyLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      map.flyTo({ center:[pos.coords.longitude, pos.coords.latitude], zoom:14, duration:1500 });
+    }, () => showToast('위치 접근이 거부되었습니다'));
+  }
+}
+
+// ── PANEL ──
+function openPanel(c) {
+  document.getElementById('p-name').textContent = c.name;
+  document.getElementById('p-addr').textContent = c.addr;
+  document.getElementById('p-speed').textContent = (c.type==='DC'?'⚡':'🔌') + ' ' + c.speed + 'kW';
+  document.getElementById('p-slots').textContent = c.slots;
+  document.getElementById('p-price').textContent = c.price;
+  document.getElementById('p-net').textContent = c.net;
+  const statusEl = document.getElementById('p-status');
+  const statusMap = { ok:['status-ok','✅ 정상 운영'], busy:['status-busy','🟡 혼잡'], broken:['status-broken','🔴 고장/점검'] };
+  statusEl.className = 'status-badge ' + statusMap[c.status][0];
+  statusEl.textContent = statusMap[c.status][1];
+  document.getElementById('modal-charger-name').textContent = c.name;
+  // close chat if open
+  document.getElementById('chat-panel').classList.remove('open');
+  document.getElementById('panel').classList.add('open');
+  map.flyTo({ center:[c.lng, c.lat], duration:800 });
+}
+function closePanel() { document.getElementById('panel').classList.remove('open'); }
+
+// ── FILTER ──
+function toggleFilter(el, type) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── CHAT ──
+const chatData = {
+  '30s': [
+    { user:'Model3_서울', car:'Tesla Model 3', text:'테슬라 V4 슈퍼차저 강남에 생겼던데 혹시 써보신 분 있나요?', time:'14:32', color:'#6366f1', mine:false },
+    { user:'IONIQ6_Kim', car:'IONIQ 6', text:'저 어제 써봤는데 진짜 빠르더라고요. 15분에 80% 됐어요', time:'14:33', color:'#f59e0b', mine:false },
+    { user:'나', car:'Tesla Model Y', text:'강남 어디요? 저도 가봐야겠는데', time:'14:35', color:'#00e5a0', mine:true },
+    { user:'EV6_Busan', car:'KIA EV6', text:'테헤란로 GFC 빌딩 지하에 있어요. 근데 주차비 비쌈 ㅠ', time:'14:36', color:'#ec4899', mine:false },
+    { user:'TaycanSeoul', car:'Porsche Taycan', text:'타이칸 800V라 어디서나 빠름 ㅋㅋ 기다릴 일 없어요', time:'14:37', color:'#a855f7', mine:false },
+  ],
+  '20s': [
+    { user:'MiniEV_Jay', car:'Mini Electric', text:'20대 충전러 여기있어요 ㅎ 미니 일렉 타는데 AC만 돼서 좀 슬픔', time:'13:10', color:'#f97316', mine:false },
+    { user:'볼트EV_한강', car:'Chevy Bolt', text:'볼트EV 중고로 샀는데 진짜 가성비 끝판왕이에요', time:'13:15', color:'#22c55e', mine:false },
+  ],
+  'tesla': [
+    { user:'ModelS_Jeju', car:'Tesla Model S Plaid', text:'제주도 슈퍼차저 중문에 4기 생겼어요. 제주 여행시 참고!', time:'12:00', color:'#ef4444', mine:false },
+    { user:'CybertruckKR', car:'Cybertruck', text:'사이버트럭 한국 들어오는 날만 기다리는 중...', time:'12:05', color:'#3b82f6', mine:false },
+    { user:'나', car:'Tesla Model Y', text:'저는 모델Y인데 충전 정말 편한 것 같아요', time:'12:10', color:'#00e5a0', mine:true },
+  ]
+};
+let currentRoom = '30s';
+let currentCarRoom = 'tesla';
+
+function renderMessages(msgs) {
+  const el = document.getElementById('messages');
+  el.innerHTML = msgs.map(m => `
+    <div class="msg ${m.mine?'mine':'other'}">
+      ${!m.mine ? `<div class="msg-avatar" style="background:${m.color}">${m.user[0]}</div>` : ''}
+      <div class="msg-body">
+        ${!m.mine ? `<div class="msg-meta"><span class="msg-name">${m.user}</span><span class="msg-car">${m.car}</span><span class="msg-time">${m.time}</span></div>` : ''}
+        <div class="msg-text">${m.text}</div>
+        ${m.mine ? `<div class="msg-time" style="text-align:right;margin-top:3px">${m.time}</div>` : ''}
       </div>
     </div>
-  </section>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-logo">EMC</div>
-      <div class="footer-formula">E = mc²</div>
-      <p class="footer-copy" data-i18n="footer_copy">© 2026 EMC — Electric Mobility Competition. All rights reserved.<br>Founder: Kent Kim (김형섭) · www.emc.city</p>
-    </div>
-  </footer>
+function switchRoom(room, el) {
+  currentRoom = room;
+  document.querySelectorAll('#age-tabs .room-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderMessages(chatData[room] || chatData['30s']);
+}
+function switchCarRoom(room, el) {
+  currentCarRoom = room;
+  document.querySelectorAll('#car-tabs .room-tab').forEach(t=>t.classList.remove('active-blue'));
+  el.classList.add('active-blue');
+  renderMessages(chatData[room] || chatData['tesla']);
+}
 
-  <script src="i18n.js"></script>
-  <script src="main.js"></script>
+function openChat() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('chat-panel').classList.add('open');
+  renderMessages(chatData['30s']);
+}
+function closeChat() { document.getElementById('chat-panel').classList.remove('open'); }
+
+function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  const room = currentRoom;
+  if (!chatData[room]) chatData[room] = [];
+  chatData[room].push({ user:'나', car:'Tesla Model Y', text, time, color:'#00e5a0', mine:true });
+  renderMessages(chatData[room]);
+  input.value = '';
+}
+
+// ── REPORT ──
+let selectedReport = null;
+function openReport() { document.getElementById('report-modal').classList.add('open'); }
+function closeReport() { document.getElementById('report-modal').classList.remove('open'); selectedReport=null; document.querySelectorAll('.report-option').forEach(el=>el.classList.remove('selected')); }
+function selectReport(el, type) {
+  selectedReport = type;
+  document.querySelectorAll('.report-option').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function submitReport() {
+  if (!selectedReport) { showToast('신고 유형을 선택해주세요'); return; }
+  closeReport();
+  showToast('✅ 신고가 접수되었습니다. 감사합니다!');
+}
+
+// ── PHOTO UPLOAD ──
+function uploadPhoto() { showToast('📷 사진 업로드 기능 (실제 앱에서 카메라 연동)'); }
+
+// ── NAVIGATE ──
+function navigate() { showToast('🗺️ 지도 앱 연동 (Google Maps / Naver Maps)'); }
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── SEARCH ──
+document.getElementById('search-input').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  if (q.length < 2) return;
+  const found = chargers.find(c => c.name.toLowerCase().includes(q) || c.addr.toLowerCase().includes(q));
+  if (found) {
+    map.flyTo({ center:[found.lng, found.lat], zoom:15, duration:1000 });
+  }
+});
+
+// Close menus on map click
+map.on('click', () => { closeLang(); });
+
+// Pulse animation for markers
+const style = document.createElement('style');
+style.textContent = `@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(0,229,160,.4)} 70%{box-shadow:0 0 0 10px rgba(0,229,160,0)} 100%{box-shadow:0 0 0 0 rgba(0,229,160,0)} }`;
+document.head.appendChild(style);
+</script>
 </body>
 </html>
-
