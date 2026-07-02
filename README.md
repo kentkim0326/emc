@@ -82,3 +82,5 @@ emc-website/
 ---
 
 *Founder: Kent Kim (김형섭) · Harvard Economics · 21 books*
+
+<!-- deploy trigger: 2026-07-02T16:49:47.294905 -->
