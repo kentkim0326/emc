@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMC — About</title>
+  <meta name="description" content="전기자동차 시대, 한국이 만드는 글로벌 축제." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- LANG BAR -->
+  <div id="lang-bar">
+    <div class="lang-inner">
+      <button class="lang-btn" data-lang="ko">🇰🇷 KO</button>
+      <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
+      <button class="lang-btn" data-lang="zh">🇨🇳 中文</button>
+      <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+      <button class="lang-btn" data-lang="fr">🇫🇷 FR</button>
+      <button class="lang-btn" data-lang="de">🇩🇪 DE</button>
+      <button class="lang-btn" data-lang="es">🇪🇸 ES</button>
+      <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
+      <button class="lang-btn" data-lang="pt">🇧🇷 PT</button>
+      <button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
+      <button class="lang-btn" data-lang="ar">🇸🇦 AR</button>
+      <button class="lang-btn" data-lang="hi">🇮🇳 HI</button>
+      <button class="lang-btn" data-lang="nl">🇳🇱 NL</button>
+      <button class="lang-btn" data-lang="sv">🇸🇪 SV</button>
+      <button class="lang-btn" data-lang="no">🇳🇴 NO</button>
+      <button class="lang-btn" data-lang="tr">🇹🇷 TR</button>
+      <button class="lang-btn" data-lang="th">🇹🇭 TH</button>
+      <button class="lang-btn" data-lang="id">🇮🇩 ID</button>
+      <button class="lang-btn" data-lang="pl">🇵🇱 PL</button>
+      <button class="lang-btn" data-lang="vi">🇻🇳 VI</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-inner">
+      <a class="nav-logo" href="/">EMC</a>
+      <ul class="nav-links">
+        <li><a href="#about"   data-i18n="nav_about">소개</a></li>
+        <li><a href="#event"   data-i18n="nav_event">행사</a></li>
+        <li><a href="#roadmap" data-i18n="nav_roadmap">로드맵</a></li>
+        
+        <li><a href="/" class="nav-map-btn" style="background:rgba(0,229,160,0.15);color:#00e5a0;border:1px solid rgba(0,229,160,0.4);padding:7px 16px;border-radius:999px;font-weight:600;font-size:13px;transition:.2s;" onmouseover="this.style.background='rgba(0,229,160,0.3)'" onmouseout="this.style.background='rgba(0,229,160,0.15)'">⚡ 충전소 맵</a></li>
+        <li><a href="#contact" class="nav-cta" data-i18n="nav_cta">참가 신청</a></li>
+      </ul>
+      <button class="nav-hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg">
+      <div class="grid-overlay"></div>
+      <div class="glow glow-1"></div>
+      <div class="glow glow-2"></div>
+      <div class="particles" id="particles"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-label" data-i18n="hero_label">TECH OPEN INNOVATION · KOREA 2026</div>
+      <h1 class="hero-title">
+        <span class="hero-emc">EMC</span>
+        <span class="hero-sub">Electric Mobility Competition</span>
+      </h1>
+      <p class="hero-formula">E = mc²</p>
+      <p class="hero-tagline">
+        <span data-i18n="hero_tagline1">전기자동차 시대,</span><br>
+        <strong data-i18n="hero_tagline2">한국이 만드는 글로벌 축제</strong>
+      </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">403<sup>+</sup></span><span class="stat-lbl" data-i18n="stat1_lbl">대 기네스 도전</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">200</span><span class="stat-lbl" data-i18n="stat2_lbl">개국 국기 래핑</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">2026</span><span class="stat-lbl" data-i18n="stat3_lbl">파일럿 목표</span></div>
+      </div>
+      <div class="hero-btns">
+        <a href="#event"   class="btn-primary" data-i18n="btn_learn">행사 알아보기</a>
+        <a href="#contact" class="btn-ghost"   data-i18n="btn_register">참가 신청하기</a>
+      </div>
+    </div>
+    <div class="hero-scroll">scroll ↓</div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <div class="section-label" data-i18n="about_label">ABOUT EMC</div>
+      <h2 class="section-title" data-i18n="about_title">왜 EMC인가?</h2>
+      <p class="section-desc" data-i18n="about_desc">F1이 한 영국인의 아이디어에서 수조 원 규모의 글로벌 스포츠로 성장한 것처럼,
+EMC는 전기차 시대의 문화 IP를 한국이 선점하는 것을 목표로 합니다.</p>
+      <div class="about-grid">
+        <div class="about-card" data-reveal><div class="card-icon">⚡</div><h3 data-i18n="card1_title">전기차 시대의 도래</h3><p data-i18n="card1_body">기술 패권은 미국·중국이 가져갔지만, 전기차 문화와 축제 IP는 아직 주인이 없습니다.</p></div>
+        <div class="about-card" data-reveal><div class="card-icon">🏁</div><h3 data-i18n="card2_title">F1이 준 영감</h3><p data-i18n="card2_body">F1은 한 사람의 비전에서 시작되었습니다. EMC는 전기차 세계의 F1이 될 것입니다.</p></div>
+        <div class="about-card" data-reveal><div class="card-icon">🌏</div><h3 data-i18n="card3_title">한국만이 할 수 있는 것</h3><p data-i18n="card3_body">판문점·파주라는 세계 유일의 평화 상징 공간, K-컬처 파워, 전기차 제조 강국.</p></div>
+        <div class="about-card" data-reveal><div class="card-icon">📐</div><h3 data-i18n="card4_title">E = mc² 철학</h3><p data-i18n="card4_body">작은 아이디어(m)가 연결과 문화의 제곱(c²)을 만나 세상을 바꾸는 에너지(E)가 됩니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENT -->
+  <section id="event">
+    <div class="event-bg"></div>
+    <div class="container">
+      <div class="section-label" data-i18n="event_label">FLAGSHIP EVENT</div>
+      <h2 class="section-title light" data-i18n="event_title">기네스 도전 국제 전기차 페스티벌</h2>
+      <p class="section-desc light" data-i18n="event_desc">전세계 전기차 오너가 한국에 모여 기네스 세계기록에 도전합니다.</p>
+      <div class="route-wrap">
+        <div class="route-steps">
+          <div class="route-step" data-reveal>
+            <div class="route-dot">1</div>
+            <div class="route-card"><h4 data-i18n="route1_title">인천 출발</h4><p data-i18n="route1_body">국제공항 인근 집결<br>200개국 국기 래핑<br>개막식</p></div>
+          </div>
+          <div class="route-arrow">→</div>
+          <div class="route-step" data-reveal>
+            <div class="route-dot">2</div>
+            <div class="route-card"><h4 data-i18n="route2_title">서울 한강</h4><p data-i18n="route2_body">한강 드라이브 코스<br>주요 미디어 구간<br>글로벌 중계</p></div>
+          </div>
+          <div class="route-arrow">→</div>
+          <div class="route-step highlight" data-reveal>
+            <div class="route-dot">★</div>
+            <div class="route-card"><h4 data-i18n="route3_title">파주 도착</h4><p data-i18n="route3_body">평화의 상징 지역<br>기네스 공식 기록<br>폐막식</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="guinness-box" data-reveal>
+        <div class="guinness-record">
+          <div class="record-item">
+            <span class="record-num">402</span>
+            <span class="record-lbl" data-i18n="dk_record">2016년 덴마크 기록</span>
+          </div>
+          <div class="record-vs">VS</div>
+          <div class="record-item target">
+            <span class="record-num">403<sup>+</sup></span>
+            <span class="record-lbl" data-i18n="emc_target">EMC 목표 — 세계신기록</span>
+          </div>
+        </div>
+        <p class="guinness-note" data-i18n="guinness_note">전세계 200개국 국기를 래핑한 전기차들이 한국의 평화 루트를 달립니다</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="roadmap">
+    <div class="container">
+      <div class="section-label" data-i18n="rm_label">ROADMAP</div>
+      <h2 class="section-title" data-i18n="rm_title">단계별 추진 계획</h2>
+      <div class="timeline">
+        <div class="tl-item" data-reveal>
+          <div class="tl-year">2026<br><small>상반기</small></div>
+          <div class="tl-dot"></div>
+          <div class="tl-content"><h4 data-i18n="phase1_title">기반 구축</h4><ul id="phase1_list"></ul></div>
+        </div>
+        <div class="tl-item" data-reveal>
+          <div class="tl-year">2026<br><small>가을</small></div>
+          <div class="tl-dot"></div>
+          <div class="tl-content"><h4 data-i18n="phase2_title">파일럿 행사</h4><ul id="phase2_list"></ul></div>
+        </div>
+        <div class="tl-item highlight" data-reveal>
+          <div class="tl-year">2027</div>
+          <div class="tl-dot"></div>
+          <div class="tl-content"><h4 data-i18n="phase3_title">공식 1회 대회 🏆</h4><ul id="phase3_list"></ul></div>
+        </div>
+        <div class="tl-item" data-reveal>
+          <div class="tl-year">2028<br><small>~</small></div>
+          <div class="tl-dot"></div>
+          <div class="tl-content"><h4 data-i18n="phase4_title">글로벌 IP화</h4><ul id="phase4_list"></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY KOREA -->
+  <section id="why-korea">
+    <div class="container">
+      <div class="section-label" data-i18n="why_label">WHY KOREA</div>
+      <h2 class="section-title" data-i18n="why_title">한국이어야 하는 이유</h2>
+      <div class="why-grid">
+        <div class="why-item" data-reveal><span class="why-icon">🚗</span><h4 data-i18n="why1_title">전기차 제조 강국</h4><p data-i18n="why1_body">현대·기아·삼성SDI·SK온 등 세계 Top5 EV 생태계</p></div>
+        <div class="why-item" data-reveal><span class="why-icon">🌏</span><h4 data-i18n="why2_title">K-컬처 글로벌 파워</h4><p data-i18n="why2_body">K-팝·K-드라마로 구축된 전세계 미디어 네트워크</p></div>
+        <div class="why-item" data-reveal><span class="why-icon">☮️</span><h4 data-i18n="why3_title">판문점·파주 루트</h4><p data-i18n="why3_body">세계 어느 나라도 따라올 수 없는 평화+미래의 상징</p></div>
+        <div class="why-item" data-reveal><span class="why-icon">📡</span><h4 data-i18n="why4_title">IT 인프라 세계 1위</h4><p data-i18n="why4_body">5G·AI·스마트시티로 최첨단 페스티벌 운영 가능</p></div>
+        <div class="why-item" data-reveal><span class="why-icon">⏰</span><h4 data-i18n="why5_title">골든타임</h4><p data-i18n="why5_body">EV 대중화 완성, 문화 IP 선점 경쟁 시작 전</p></div>
+        <div class="why-item" data-reveal><span class="why-icon">🏆</span><h4 data-i18n="why6_title">선점 효과</h4><p data-i18n="why6_body">F1처럼 최초가 곧 영구적 표준이 됩니다</p></div>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <!-- CONTACT -->
+  
+  <!-- MAP CTA -->
+  <section id="map-cta" style="padding:80px 20px;text-align:center;background:linear-gradient(135deg,rgba(0,229,160,0.05),rgba(0,102,255,0.05));border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div style="max-width:600px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:20px;">
+      <div style="font-size:48px;">🗺️</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,52px);letter-spacing:2px;color:#f0f4ff;" data-i18n="map_cta_title">전세계 EV 충전소 지도</h2>
+      <p style="color:#6b7a99;font-size:16px;line-height:1.7;max-width:480px;" data-i18n="map_cta_desc">전세계 전기차 충전소를 실시간으로 확인하세요. 충전소 상태 신고, 사진 업로드, EV 오너 커뮤니티 채팅까지.</p>
+      <a href="/" style="display:inline-flex;align-items:center;gap:10px;background:#00e5a0;color:#000;font-weight:700;font-size:15px;padding:14px 32px;border-radius:999px;text-decoration:none;transition:.2s;box-shadow:0 0 30px rgba(0,229,160,0.3);" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+        ⚡ 충전소 맵 보기
+      </a>
+    </div>
+  </section>
+
+<section id="contact">
+    <div class="contact-bg"><div class="glow glow-3"></div></div>
+    <div class="container">
+      <div class="section-label" data-i18n="contact_label">JOIN US</div>
+      <h2 class="section-title light" data-i18n="contact_title">함께 만들어 가세요</h2>
+      <p class="section-desc light" data-i18n="contact_desc">스폰서십, 파트너십, 참가 신청 등 문의를 환영합니다</p>
+      <div class="contact-grid">
+        <div class="contact-card" data-reveal><div class="contact-icon">🏢</div><h4 data-i18n="ct1_title">스폰서십</h4><p data-i18n="ct1_body">타이틀 스폰서·공식 파트너 문의</p></div>
+        <div class="contact-card" data-reveal><div class="contact-icon">🚗</div><h4 data-i18n="ct2_title">참가 신청</h4><p data-i18n="ct2_body">전기차 오너 개인·팀 참가 등록</p></div>
+        <div class="contact-card" data-reveal><div class="contact-icon">📺</div><h4 data-i18n="ct3_title">미디어 협력</h4><p data-i18n="ct3_body">취재·중계·콘텐츠 파트너십</p></div>
+        <div class="contact-card" data-reveal><div class="contact-icon">🤝</div><h4 data-i18n="ct4_title">기관 협력</h4><p data-i18n="ct4_body">지자체·정부기관 MOU 문의</p></div>
+      </div>
+      <div class="contact-form-wrap" data-reveal>
+        <form class="contact-form" id="contactForm" action="https://formspree.io/f/mdawvarp" method="POST">
+          <div class="form-row">
+            <input type="text"  data-i18n="form_name"  placeholder="성함"   name="name" required />
+            <input type="email" data-i18n="form_email" placeholder="이메일" name="email" required />
+          </div>
+          <select name="inquiry_type" required>
+            <option value="" disabled selected data-i18n="form_select">문의 유형 선택</option>
+            <option data-i18n="ct1_title">스폰서십</option>
+            <option data-i18n="ct2_title">참가 신청</option>
+            <option data-i18n="ct3_title">미디어 협력</option>
+            <option data-i18n="ct4_title">기관 협력</option>
+          </select>
+          <textarea data-i18n="form_msg" placeholder="메시지를 입력해주세요" name="message" rows="4" required></textarea>
+          <button type="submit" class="btn-primary full" id="submitBtn" data-i18n="form_submit">문의하기 →</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">EMC</div>
+      <div class="footer-formula">E = mc²</div>
+      <p class="footer-copy" data-i18n="footer_copy">© 2026 EMC — Electric Mobility Competition. All rights reserved.<br>Founder: Kent Kim (김형섭) · www.emc.city</p>
+    </div>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
+
+
