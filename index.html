@@ -365,6 +365,56 @@
     width:10px; height:10px; border-radius:50%;
     background:#ff4d4d; border:2px solid var(--bg);
   }
+
+  /* ── TICKER ── */
+  #ticker-wrap {
+    position:absolute; bottom:0; left:0; right:0; z-index:150;
+    height:36px; background:rgba(10,14,26,0.92);
+    border-top:1px solid rgba(255,255,255,0.07);
+    display:flex; overflow:hidden; align-items:center;
+  }
+  .ticker-label {
+    flex-shrink:0; padding:0 14px; height:100%;
+    display:flex; align-items:center; gap:6px;
+    font-size:10px; font-weight:700; letter-spacing:.1em;
+    border-right:1px solid rgba(255,255,255,0.1);
+    white-space:nowrap;
+  }
+  .ticker-label.news  { background:rgba(0,102,255,.25); color:#4d9fff; }
+  .ticker-label.weather { background:rgba(0,229,160,.15); color:#00e5a0; }
+  .ticker-track {
+    flex:1; overflow:hidden; position:relative; height:100%;
+    display:flex; align-items:center;
+  }
+  .ticker-inner {
+    display:flex; align-items:center; gap:0;
+    white-space:nowrap; will-change:transform;
+    animation: ticker-scroll 60s linear infinite;
+  }
+  .ticker-inner:hover { animation-play-state:paused; }
+  .ticker-item {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:0 28px; font-size:12px; color:rgba(240,244,255,0.8);
+    border-right:1px solid rgba(255,255,255,0.08);
+    cursor:pointer; transition:.15s;
+  }
+  .ticker-item:hover { color:#fff; }
+  .ticker-item .ti-icon { font-size:13px; }
+  .ticker-item.weather-item .temp { font-weight:700; }
+  .ticker-item.weather-item .temp.hot  { color:#ff6b35; }
+  .ticker-item.weather-item .temp.warm { color:#ffd700; }
+  .ticker-item.weather-item .temp.cool { color:#00e5a0; }
+  .ticker-item.weather-item .temp.cold { color:#4d9fff; }
+  .ticker-sep { padding:0 8px; color:rgba(255,255,255,0.15); font-size:16px; }
+  @keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  /* statsbar 위로 올리기 - ticker 공간 확보 */
+  #statsbar { bottom: 46px; }
+  #legend   { bottom: 46px; }
+  #fab-chat { bottom: 120px; }
+
 </style>
 </head>
 <body>
@@ -858,5 +908,107 @@ const style = document.createElement('style');
 style.textContent = `@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(0,229,160,.4)} 70%{box-shadow:0 0 0 10px rgba(0,229,160,0)} 100%{box-shadow:0 0 0 0 rgba(0,229,160,0)} }`;
 document.head.appendChild(style);
 </script>
+
+<!-- ── TICKER ── -->
+<div id="ticker-wrap">
+  <!-- 뉴스 섹션 -->
+  <div class="ticker-label news">📰 EV NEWS</div>
+  <div class="ticker-track" id="news-track">
+    <div class="ticker-inner" id="news-inner">
+      <span class="ticker-item"><span class="ti-icon">🚗</span>현대차 아이오닉 9, 북미 시장 출시 확정 — 1회 충전 620km 주행</span>
+      <span class="ticker-item"><span class="ti-icon">⚡</span>테슬라 V4 슈퍼차저 한국 추가 설치 — 강남·판교·인천 3곳</span>
+      <span class="ticker-item"><span class="ti-icon">🏆</span>기아 EV6 GT, 2025 올해의 차 선정 — 유럽 자동차 기자 협회</span>
+      <span class="ticker-item"><span class="ti-icon">🔋</span>삼성SDI, 전고체 배터리 2027년 양산 확정 — 에너지 밀도 900Wh/L</span>
+      <span class="ticker-item"><span class="ti-icon">🌍</span>EU, 2035년 내연기관차 판매 금지 최종 확정</span>
+      <span class="ticker-item"><span class="ti-icon">🚀</span>루시드 에어, 1회 충전 1,205km 기네스 신기록 등재</span>
+      <span class="ticker-item"><span class="ti-icon">💡</span>환경부, 전국 급속충전소 2025년말까지 1만기 확충 계획 발표</span>
+      <span class="ticker-item"><span class="ti-icon">🏎️</span>포르쉐 타이칸 터보 GT, 뉘르부르크링 EV 최속 기록 경신</span>
+      <span class="ticker-item"><span class="ti-icon">📱</span>카카오모빌리티, EV 충전소 실시간 예약 서비스 전국 확대</span>
+      <span class="ticker-item"><span class="ti-icon">🇰🇷</span>한국 전기차 보급 200만대 돌파 — 세계 5위 시장으로 부상</span>
+      <!-- 반복 (seamless loop) -->
+      <span class="ticker-item"><span class="ti-icon">🚗</span>현대차 아이오닉 9, 북미 시장 출시 확정 — 1회 충전 620km 주행</span>
+      <span class="ticker-item"><span class="ti-icon">⚡</span>테슬라 V4 슈퍼차저 한국 추가 설치 — 강남·판교·인천 3곳</span>
+      <span class="ticker-item"><span class="ti-icon">🏆</span>기아 EV6 GT, 2025 올해의 차 선정 — 유럽 자동차 기자 협회</span>
+      <span class="ticker-item"><span class="ti-icon">🔋</span>삼성SDI, 전고체 배터리 2027년 양산 확정 — 에너지 밀도 900Wh/L</span>
+      <span class="ticker-item"><span class="ti-icon">🌍</span>EU, 2035년 내연기관차 판매 금지 최종 확정</span>
+      <span class="ticker-item"><span class="ti-icon">🚀</span>루시드 에어, 1회 충전 1,205km 기네스 신기록 등재</span>
+      <span class="ticker-item"><span class="ti-icon">💡</span>환경부, 전국 급속충전소 2025년말까지 1만기 확충 계획 발표</span>
+      <span class="ticker-item"><span class="ti-icon">🏎️</span>포르쉐 타이칸 터보 GT, 뉘르부르크링 EV 최속 기록 경신</span>
+      <span class="ticker-item"><span class="ti-icon">📱</span>카카오모빌리티, EV 충전소 실시간 예약 서비스 전국 확대</span>
+      <span class="ticker-item"><span class="ti-icon">🇰🇷</span>한국 전기차 보급 200만대 돌파 — 세계 5위 시장으로 부상</span>
+    </div>
+  </div>
+
+  <!-- 날씨 섹션 -->
+  <div class="ticker-label weather">🌤️ WEATHER</div>
+  <div class="ticker-track" style="max-width:420px;">
+    <div class="ticker-inner" id="weather-inner">
+      <span class="ticker-item weather-item">서울 <span class="ti-icon">🌤️</span><span class="temp warm" id="w-seoul">28°C</span></span>
+      <span class="ticker-item weather-item">부산 <span class="ti-icon">⛅</span><span class="temp warm" id="w-busan">26°C</span></span>
+      <span class="ticker-item weather-item">인천 <span class="ti-icon">🌥️</span><span class="temp cool" id="w-incheon">24°C</span></span>
+      <span class="ticker-item weather-item">대구 <span class="ti-icon">☀️</span><span class="temp hot" id="w-daegu">32°C</span></span>
+      <span class="ticker-item weather-item">대전 <span class="ti-icon">🌤️</span><span class="temp warm">29°C</span></span>
+      <span class="ticker-item weather-item">광주 <span class="ti-icon">☀️</span><span class="temp hot">31°C</span></span>
+      <span class="ticker-item weather-item">제주 <span class="ti-icon">🌦️</span><span class="temp warm">27°C</span></span>
+      <span class="ticker-item weather-item">강릉 <span class="ti-icon">⛅</span><span class="temp cool">23°C</span></span>
+      <!-- 반복 -->
+      <span class="ticker-item weather-item">서울 <span class="ti-icon">🌤️</span><span class="temp warm">28°C</span></span>
+      <span class="ticker-item weather-item">부산 <span class="ti-icon">⛅</span><span class="temp warm">26°C</span></span>
+      <span class="ticker-item weather-item">인천 <span class="ti-icon">🌥️</span><span class="temp cool">24°C</span></span>
+      <span class="ticker-item weather-item">대구 <span class="ti-icon">☀️</span><span class="temp hot">32°C</span></span>
+      <span class="ticker-item weather-item">대전 <span class="ti-icon">🌤️</span><span class="temp warm">29°C</span></span>
+      <span class="ticker-item weather-item">광주 <span class="ti-icon">☀️</span><span class="temp hot">31°C</span></span>
+      <span class="ticker-item weather-item">제주 <span class="ti-icon">🌦️</span><span class="temp warm">27°C</span></span>
+      <span class="ticker-item weather-item">강릉 <span class="ti-icon">⛅</span><span class="temp cool">23°C</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 실시간 날씨 (Open-Meteo 무료 API - 키 불필요) ──
+const cities = [
+  { id:'w-seoul',   name:'서울', lat:37.5665, lon:126.9780 },
+  { id:'w-busan',   name:'부산', lat:35.1796, lon:129.0756 },
+  { id:'w-incheon', name:'인천', lat:37.4563, lon:126.7052 },
+  { id:'w-daegu',   name:'대구', lat:35.8714, lon:128.6014 },
+];
+const weatherIcon = t => t >= 30 ? '☀️' : t >= 25 ? '🌤️' : t >= 20 ? '⛅' : t >= 10 ? '🌥️' : '🥶';
+const tempClass   = t => t >= 30 ? 'hot' : t >= 23 ? 'warm' : t >= 15 ? 'cool' : 'cold';
+
+async function fetchWeather() {
+  for (const city of cities) {
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m&timezone=Asia/Seoul`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      const el = document.getElementById(city.id);
+      if (el) {
+        el.textContent = temp + '°C';
+        el.className = 'temp ' + tempClass(temp);
+        // icon 업데이트
+        const item = el.closest('.weather-item');
+        if (item) {
+          const icon = item.querySelector('.ti-icon');
+          if (icon) icon.textContent = weatherIcon(temp);
+        }
+      }
+    } catch(e) {}
+  }
+}
+fetchWeather();
+setInterval(fetchWeather, 10 * 60 * 1000); // 10분마다 갱신
+
+// ── RSS 뉴스 (Google News RSS → 실제 배포시 CORS 프록시 필요) ──
+// 현재는 정적 뉴스로 운영, 추후 Supabase Edge Function으로 RSS 파싱
+async function fetchEVNews() {
+  // TODO: RSS 프록시 서버 구축 후 연동
+  // const rss = await fetch('https://your-proxy/ev-news');
+  // 현재는 정적 뉴스 유지
+}
+fetchEVNews();
+</script>
+
 </body>
 </html>
+
