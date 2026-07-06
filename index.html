@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="전세계 전기차 충전소 실시간 지도. EV 오너 커뮤니티, 충전소 고장 신고, 뉴스.">
+<meta property="og:title" content="EMC — EV Charger Map">
+<meta property="og:description" content="전세계 전기차 충전소 실시간 지도. EV 오너 커뮤니티, 충전소 고장 신고.">
+<meta property="og:image" content="/assets/emc-logo.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>EMC — EV Charger Map</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -419,8 +427,8 @@
 
   /* ── MAP STYLE TOGGLE ── */
   #style-toggle {
-    position:absolute; top:70px; right:20px; z-index:100;
-    display:flex; flex-direction:column; gap:6px;
+    position:absolute; bottom:120px; right:52px; z-index:100;
+    display:flex; flex-direction:row; gap:6px;
   }
   .style-btn {
     width:42px; height:42px; border-radius:10px;
@@ -432,18 +440,70 @@
   .style-btn:hover { border-color:var(--accent); transform:scale(1.05); }
   .style-btn.active { border-color:var(--accent); background:rgba(0,229,160,0.15); }
   .style-btn .style-label {
-    position:absolute; right:48px; top:50%; transform:translateY(-50%);
+    position:absolute; bottom:48px; left:50%; transform:translateX(-50%);
     background:var(--surface); border:1px solid var(--border);
     border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600;
     white-space:nowrap; opacity:0; pointer-events:none; transition:.15s;
   }
   .style-btn:hover .style-label { opacity:1; }
 
+
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 768px) {
+    :root { --panel-w: 100vw; }
+    #topbar { padding:10px 14px; gap:8px; }
+    #searchbar { max-width:none; flex:1; padding:7px 14px; }
+    #lang-btn { display:none; }
+    #filterbar { top:62px; left:10px; gap:6px; }
+    .filter-pill { padding:5px 10px; font-size:11px; }
+    #statsbar { 
+      left:10px; right:10px; transform:none;
+      bottom:46px;
+    }
+    .stat-item { padding:8px 12px; }
+    .stat-num { font-size:16px; }
+    #legend { display:none; }
+    #style-toggle { bottom:110px; right:46px; }
+    .style-btn { width:36px; height:36px; font-size:15px; }
+    #fab-chat { bottom:110px; right:10px; width:46px; height:46px; font-size:19px; }
+    #ticker-wrap { height:32px; }
+    .ticker-item { font-size:11px; padding:0 16px; }
+    .ticker-label { padding:0 10px; font-size:9px; }
+    #panel, #chat-panel { width:100vw; }
+  }
+  @media (max-width: 480px) {
+    #searchbar input { font-size:13px; }
+    .stat-item { padding:6px 10px; }
+    .stat-num { font-size:14px; }
+    .stat-label { font-size:9px; }
+  }
+
 </style>
 </head>
 <body>
 
 <!-- MAP -->
+
+<!-- LOADING SPINNER -->
+<div id="map-loader" style="
+  position:fixed;inset:0;z-index:999;
+  background:#0a0e1a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .5s;
+">
+  <img src="/assets/emc-logo.png" alt="EMC" style="height:60px;width:auto;animation:pulse-logo 1.5s ease-in-out infinite;">
+  <div style="display:flex;gap:8px">
+    <div style="width:8px;height:8px;border-radius:50%;background:#00e5a0;animation:dot-bounce .8s ease-in-out infinite;"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#00e5a0;animation:dot-bounce .8s ease-in-out .15s infinite;"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#00e5a0;animation:dot-bounce .8s ease-in-out .3s infinite;"></div>
+  </div>
+  <div style="font-size:13px;color:#6b7a99;letter-spacing:.1em;">충전소 데이터 로딩중...</div>
+</div>
+<style>
+@keyframes pulse-logo { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(0.97)} }
+@keyframes dot-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+</style>
+
 <div id="map" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;"></div>
 
 <!-- TOP BAR -->
@@ -782,6 +842,10 @@ const chargers = [
 const colorMap = { ok:'#00e5a0', busy:'#ffd700', broken:'#ff4d4d' };
 
 map.on('load', () => {
+  // 스피너 숨기기
+  const loader = document.getElementById('map-loader');
+  if (loader) { loader.style.opacity = '0'; setTimeout(() => loader.style.display='none', 500); }
+
   chargers.forEach(c => {
     const el = document.createElement('div');
     el.style.cssText = `
@@ -848,11 +912,46 @@ const chatData = {
   '20s': [
     { user:'MiniEV_Jay', car:'Mini Electric', text:'20대 충전러 여기있어요 ㅎ 미니 일렉 타는데 AC만 돼서 좀 슬픔', time:'13:10', color:'#f97316', mine:false },
     { user:'볼트EV_한강', car:'Chevy Bolt', text:'볼트EV 중고로 샀는데 진짜 가성비 끝판왕이에요', time:'13:15', color:'#22c55e', mine:false },
+    { user:'IONIQ6_20s', car:'IONIQ 6', text:'아이오닉6 리스로 탔는데 진짜 만족이에요. 20대도 전기차 많이 타세요!', time:'13:20', color:'#6366f1', mine:false },
+  ],
+  '40s': [
+    { user:'EV9_Dad', car:'KIA EV9', text:'EV9 가족차로 딱이에요. 3열까지 넉넉하고 1회 충전 500km 이상', time:'11:00', color:'#8b5cf6', mine:false },
+    { user:'ModelX_40s', car:'Tesla Model X', text:'모델X 오너 2년차입니다. 팔콘윙 아직도 신기해요 ㅋ', time:'11:05', color:'#ef4444', mine:false },
+    { user:'BMW_iX_Seoul', car:'BMW iX', text:'BMW iX 타시는 분 계세요? 충전 속도가 좀 아쉽긴 한데 주행감은 최고', time:'11:10', color:'#3b82f6', mine:false },
+  ],
+  '50s': [
+    { user:'제네시스_GV80e', car:'Genesis GV80e', text:'GV80e 전동화 버전 나왔던데 혹시 타보신 분?', time:'10:00', color:'#d97706', mine:false },
+    { user:'벤츠EQS_부산', car:'Mercedes EQS', text:'EQS 580 타는데 OTA 업데이트 후 주행거리 늘었어요', time:'10:08', color:'#6b7280', mine:false },
+  ],
+  '60s': [
+    { user:'아이오닉5_은퇴', car:'IONIQ 5', text:'은퇴 후 아이오닉5로 전국 일주했어요. 충전 인프라 많이 좋아졌더라고요', time:'09:00', color:'#10b981', mine:false },
+    { user:'코나EV_시골', car:'Hyundai Kona EV', text:'시골 사는데 집에서 완속충전하면 충분해요. 주유소 갈 일이 없으니 편하네요', time:'09:15', color:'#f59e0b', mine:false },
   ],
   'tesla': [
     { user:'ModelS_Jeju', car:'Tesla Model S Plaid', text:'제주도 슈퍼차저 중문에 4기 생겼어요. 제주 여행시 참고!', time:'12:00', color:'#ef4444', mine:false },
     { user:'CybertruckKR', car:'Cybertruck', text:'사이버트럭 한국 들어오는 날만 기다리는 중...', time:'12:05', color:'#3b82f6', mine:false },
     { user:'나', car:'Tesla Model Y', text:'저는 모델Y인데 충전 정말 편한 것 같아요', time:'12:10', color:'#00e5a0', mine:true },
+  ],
+  'hyundai': [
+    { user:'IONIQ5_KR', car:'IONIQ 5', text:'아이오닉5 V2L 기능으로 캠핑할 때 진짜 유용해요', time:'11:30', color:'#0ea5e9', mine:false },
+    { user:'EV6_GT', car:'KIA EV6 GT', text:'EV6 GT 577마력 진짜 미쳤어요. 제로백 3.5초', time:'11:35', color:'#f97316', mine:false },
+    { user:'EV9_3열', car:'KIA EV9', text:'EV9 6인승 vs 7인승 고민하시는 분들 6인승 추천. 뒷공간 넓어요', time:'11:40', color:'#8b5cf6', mine:false },
+  ],
+  'bmw': [
+    { user:'i4_M50', car:'BMW i4 M50', text:'i4 M50 드라이빙 감각이 내연기관이랑 거의 비슷해요. BMW 팬이면 실망 없을 듯', time:'10:20', color:'#1d4ed8', mine:false },
+    { user:'iX3_Seoul', car:'BMW iX3', text:'iX3 완충 460km 실주행 380km 정도 나오네요', time:'10:25', color:'#374151', mine:false },
+  ],
+  'porsche': [
+    { user:'TaycanGTS', car:'Porsche Taycan GTS', text:'타이칸 800V 아키텍처 덕에 22분 10-80% 충전 진짜 빠름', time:'09:50', color:'#dc2626', mine:false },
+    { user:'Taycan4S', car:'Porsche Taycan 4S', text:'타이칸 오너 모임 매달 있어요. 관심있으신 분 DM주세요', time:'09:55', color:'#7c3aed', mine:false },
+  ],
+  'lucid': [
+    { user:'LucidAir_KR', car:'Lucid Air GT', text:'루시드 에어 기네스 1205km 기록 달성한 바로 그 차 타고있어요 ㅎㅎ', time:'09:30', color:'#059669', mine:false },
+  ],
+  'other': [
+    { user:'볼보EX90', car:'Volvo EX90', text:'볼보 EX90 예약했어요. 안전 사양이 압도적이더라고요', time:'08:00', color:'#1f2937', mine:false },
+    { user:'폴스타3', car:'Polestar 3', text:'폴스타3 기네스 SUV 주행거리 신기록 봤어요? 935km 대박', time:'08:10', color:'#4f46e5', mine:false },
+    { user:'리비안_R1T', car:'Rivian R1T', text:'리비안 한국 출시 언제 되려나... 저 미국서 타봤는데 오프로드 진짜 좋던데', time:'08:20', color:'#047857', mine:false },
   ]
 };
 let currentRoom = '30s';
@@ -997,6 +1096,16 @@ function setMapStyle(styleName) {
 
 map.on('click', () => { closeLang(); });
 
+// ESC 키로 패널 닫기
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePanel();
+    closeChat();
+    closeReport();
+    closeLang();
+  }
+});
+
 // 창 크기 변경시 지도 리사이즈
 window.addEventListener('resize', () => {
   map.resize();
@@ -1047,23 +1156,26 @@ document.head.appendChild(style);
   <div class="ticker-label weather">🌤️ WEATHER</div>
   <div class="ticker-track" style="max-width:420px;">
     <div class="ticker-inner" id="weather-inner">
-      <span class="ticker-item weather-item">서울 <span class="ti-icon">🌤️</span><span class="temp warm" id="w-seoul">28°C</span></span>
-      <span class="ticker-item weather-item">부산 <span class="ti-icon">⛅</span><span class="temp warm" id="w-busan">26°C</span></span>
-      <span class="ticker-item weather-item">인천 <span class="ti-icon">🌥️</span><span class="temp cool" id="w-incheon">24°C</span></span>
-      <span class="ticker-item weather-item">대구 <span class="ti-icon">☀️</span><span class="temp hot" id="w-daegu">32°C</span></span>
-      <span class="ticker-item weather-item">대전 <span class="ti-icon">🌤️</span><span class="temp warm">29°C</span></span>
-      <span class="ticker-item weather-item">광주 <span class="ti-icon">☀️</span><span class="temp hot">31°C</span></span>
-      <span class="ticker-item weather-item">제주 <span class="ti-icon">🌦️</span><span class="temp warm">27°C</span></span>
-      <span class="ticker-item weather-item">강릉 <span class="ti-icon">⛅</span><span class="temp cool">23°C</span></span>
-      <!-- 반복 -->
-      <span class="ticker-item weather-item">서울 <span class="ti-icon">🌤️</span><span class="temp warm">28°C</span></span>
-      <span class="ticker-item weather-item">부산 <span class="ti-icon">⛅</span><span class="temp warm">26°C</span></span>
-      <span class="ticker-item weather-item">인천 <span class="ti-icon">🌥️</span><span class="temp cool">24°C</span></span>
-      <span class="ticker-item weather-item">대구 <span class="ti-icon">☀️</span><span class="temp hot">32°C</span></span>
-      <span class="ticker-item weather-item">대전 <span class="ti-icon">🌤️</span><span class="temp warm">29°C</span></span>
-      <span class="ticker-item weather-item">광주 <span class="ti-icon">☀️</span><span class="temp hot">31°C</span></span>
-      <span class="ticker-item weather-item">제주 <span class="ti-icon">🌦️</span><span class="temp warm">27°C</span></span>
-      <span class="ticker-item weather-item">강릉 <span class="ti-icon">⛅</span><span class="temp cool">23°C</span></span>
+      <span class="ticker-item weather-item">서울 <span class="ti-icon" id="wi-seoul">🌤️</span><span class="temp warm" id="w-seoul">--°C</span></span>
+      <span class="ticker-item weather-item">부산 <span class="ti-icon" id="wi-busan">⛅</span><span class="temp warm" id="w-busan">--°C</span></span>
+      <span class="ticker-item weather-item">인천 <span class="ti-icon" id="wi-incheon">🌥️</span><span class="temp cool" id="w-incheon">--°C</span></span>
+      <span class="ticker-item weather-item">대구 <span class="ti-icon" id="wi-daegu">☀️</span><span class="temp hot" id="w-daegu">--°C</span></span>
+      <span class="ticker-item weather-item">대전 <span class="ti-icon" id="wi-daejeon">🌤️</span><span class="temp warm" id="w-daejeon">--°C</span></span>
+      <span class="ticker-item weather-item">광주 <span class="ti-icon" id="wi-gwangju">☀️</span><span class="temp hot" id="w-gwangju">--°C</span></span>
+      <span class="ticker-item weather-item">제주 <span class="ti-icon" id="wi-jeju">🌦️</span><span class="temp warm" id="w-jeju">--°C</span></span>
+      <span class="ticker-item weather-item">강릉 <span class="ti-icon" id="wi-gangneung">⛅</span><span class="temp cool" id="w-gangneung">--°C</span></span>
+      <span class="ticker-item weather-item">수원 <span class="ti-icon" id="wi-suwon">🌤️</span><span class="temp warm" id="w-suwon">--°C</span></span>
+      <span class="ticker-item weather-item">전주 <span class="ti-icon" id="wi-jeonju">⛅</span><span class="temp cool" id="w-jeonju">--°C</span></span>
+      <span class="ticker-item weather-item">서울 <span class="ti-icon">🌤️</span><span class="temp warm">--°C</span></span>
+      <span class="ticker-item weather-item">부산 <span class="ti-icon">⛅</span><span class="temp warm">--°C</span></span>
+      <span class="ticker-item weather-item">인천 <span class="ti-icon">🌥️</span><span class="temp cool">--°C</span></span>
+      <span class="ticker-item weather-item">대구 <span class="ti-icon">☀️</span><span class="temp hot">--°C</span></span>
+      <span class="ticker-item weather-item">대전 <span class="ti-icon">🌤️</span><span class="temp warm">--°C</span></span>
+      <span class="ticker-item weather-item">광주 <span class="ti-icon">☀️</span><span class="temp hot">--°C</span></span>
+      <span class="ticker-item weather-item">제주 <span class="ti-icon">🌦️</span><span class="temp warm">--°C</span></span>
+      <span class="ticker-item weather-item">강릉 <span class="ti-icon">⛅</span><span class="temp cool">--°C</span></span>
+      <span class="ticker-item weather-item">수원 <span class="ti-icon">🌤️</span><span class="temp warm">--°C</span></span>
+      <span class="ticker-item weather-item">전주 <span class="ti-icon">⛅</span><span class="temp cool">--°C</span></span>
     </div>
   </div>
 </div>
@@ -1071,10 +1183,16 @@ document.head.appendChild(style);
 <script>
 // ── 실시간 날씨 (Open-Meteo 무료 API - 키 불필요) ──
 const cities = [
-  { id:'w-seoul',   name:'서울', lat:37.5665, lon:126.9780 },
-  { id:'w-busan',   name:'부산', lat:35.1796, lon:129.0756 },
-  { id:'w-incheon', name:'인천', lat:37.4563, lon:126.7052 },
-  { id:'w-daegu',   name:'대구', lat:35.8714, lon:128.6014 },
+  { id:'w-seoul',   name:'서울',   lat:37.5665, lon:126.9780 },
+  { id:'w-busan',   name:'부산',   lat:35.1796, lon:129.0756 },
+  { id:'w-incheon', name:'인천',   lat:37.4563, lon:126.7052 },
+  { id:'w-daegu',   name:'대구',   lat:35.8714, lon:128.6014 },
+  { id:'w-daejeon', name:'대전',   lat:36.3504, lon:127.3845 },
+  { id:'w-gwangju', name:'광주',   lat:35.1595, lon:126.8526 },
+  { id:'w-jeju',    name:'제주',   lat:33.4996, lon:126.5312 },
+  { id:'w-gangneung',name:'강릉',  lat:37.7519, lon:128.8760 },
+  { id:'w-suwon',   name:'수원',   lat:37.2636, lon:127.0286 },
+  { id:'w-jeonju',  name:'전주',   lat:35.8242, lon:127.1480 },
 ];
 const weatherIcon = t => t >= 30 ? '☀️' : t >= 25 ? '🌤️' : t >= 20 ? '⛅' : t >= 10 ? '🌥️' : '🥶';
 const tempClass   = t => t >= 30 ? 'hot' : t >= 23 ? 'warm' : t >= 15 ? 'cool' : 'cold';
@@ -1090,13 +1208,9 @@ async function fetchWeather() {
       if (el) {
         el.textContent = temp + '°C';
         el.className = 'temp ' + tempClass(temp);
-        // icon 업데이트
-        const item = el.closest('.weather-item');
-        if (item) {
-          const icon = item.querySelector('.ti-icon');
-          if (icon) icon.textContent = weatherIcon(temp);
-        }
       }
+      const iconEl = document.getElementById('wi-' + city.id.replace('w-',''));
+      if (iconEl) iconEl.textContent = weatherIcon(temp);
     } catch(e) {}
   }
 }
@@ -1143,5 +1257,6 @@ setInterval(fetchEVNews, 30 * 60 * 1000); // 30분마다 갱신
 
 </body>
 </html>
+
 
 
