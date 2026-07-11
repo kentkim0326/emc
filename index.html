@@ -547,10 +547,10 @@
 
 <!-- MAP STYLE TOGGLE -->
 <div id="style-toggle">
-  <button class="style-btn active" onclick="setMapStyle('dark')" id="btn-dark" title="Dark">
+  <button class="style-btn" onclick="setMapStyle('dark')" id="btn-dark" title="Dark">
     🌑<span class="style-label">Dark</span>
   </button>
-  <button class="style-btn" onclick="setMapStyle('light')" id="btn-light" title="Light">
+  <button class="style-btn active" onclick="setMapStyle('light')" id="btn-light" title="Light">
     ☀️<span class="style-label">Light</span>
   </button>
   <button class="style-btn" onclick="setMapStyle('street')" id="btn-street" title="Street">
@@ -810,7 +810,7 @@ const map = new maplibregl.Map({
   style: {
     version: 8,
     sources: {
-      'osm': { type:'raster', tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap © CartoDB' }
+      'osm': { type:'raster', tiles:['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'], tileSize:256, attribution:'© OpenStreetMap © CartoDB' }
     },
     layers: [{ id:'osm', type:'raster', source:'osm', paint:{ 'raster-opacity':1 } }]
   },
@@ -841,6 +841,8 @@ const chargers = [
 
 const colorMap = { ok:'#00e5a0', busy:'#ffd700', broken:'#ff4d4d' };
 
+const allMarkers = [];  // 필터링용 마커 저장
+
 map.on('load', () => {
   // 스피너 숨기기
   const loader = document.getElementById('map-loader');
@@ -851,10 +853,10 @@ map.on('load', () => {
     el.style.cssText = `
       width:36px; height:36px; border-radius:50%; 
       background:${colorMap[c.status]}; 
-      border:3px solid rgba(255,255,255,0.25);
+      border:3px solid rgba(0,0,0,0.35);
       display:flex; align-items:center; justify-content:center;
       font-size:14px; cursor:pointer;
-      box-shadow:0 0 12px ${colorMap[c.status]}66;
+      box-shadow:0 2px 8px rgba(0,0,0,0.4), 0 0 12px ${colorMap[c.status]}88;
       transition:.2s;
     `;
     el.innerHTML = c.type === 'DC' ? '⚡' : '🔌';
@@ -862,9 +864,23 @@ map.on('load', () => {
     el.addEventListener('mouseenter', () => { el.style.transform='scale(1.2)'; });
     el.addEventListener('mouseleave', () => { el.style.transform='scale(1)'; });
     el.addEventListener('click', () => openPanel(c));
-    new maplibregl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
+    const marker = new maplibregl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
+    allMarkers.push({ marker, data: c, el });
   });
+  updateStats();
 });
+
+// 통계 실제 데이터 기반 업데이트
+function updateStats() {
+  const visible = allMarkers.filter(m => m.el.style.display !== 'none');
+  const ok = visible.filter(m => m.data.status === 'ok').length;
+  const busy = visible.filter(m => m.data.status === 'busy').length;
+  const broken = visible.filter(m => m.data.status === 'broken').length;
+  document.getElementById('stat-total').textContent = visible.length;
+  document.getElementById('stat-ok').textContent = ok;
+  document.getElementById('stat-busy').textContent = busy;
+  document.getElementById('stat-broken').textContent = broken;
+}
 
 function goToMyLocation() {
   if (navigator.geolocation) {
@@ -876,6 +892,7 @@ function goToMyLocation() {
 
 // ── PANEL ──
 function openPanel(c) {
+  currentCharger = c;
   document.getElementById('p-name').textContent = c.name;
   document.getElementById('p-addr').textContent = c.addr;
   document.getElementById('p-speed').textContent = (c.type==='DC'?'⚡':'🔌') + ' ' + c.speed + 'kW';
@@ -898,6 +915,17 @@ function closePanel() { document.getElementById('panel').classList.remove('open'
 function toggleFilter(el, type) {
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
+  // 실제 마커 필터링
+  allMarkers.forEach(({ el: markerEl, data }) => {
+    let show = true;
+    if (type === 'ok')     show = data.status === 'ok';
+    if (type === 'busy')   show = data.status === 'busy';
+    if (type === 'broken') show = data.status === 'broken';
+    if (type === 'dc')     show = data.type === 'DC';
+    if (type === 'ac')     show = data.type === 'AC';
+    markerEl.style.display = show ? 'flex' : 'none';
+  });
+  updateStats();
 }
 
 // ── CHAT ──
@@ -1024,7 +1052,23 @@ function submitReport() {
 function uploadPhoto() { showToast('📷 사진 업로드 기능 (실제 앱에서 카메라 연동)'); }
 
 // ── NAVIGATE ──
-function navigate() { showToast('🗺️ 지도 앱 연동 (Google Maps / Naver Maps)'); }
+let currentCharger = null;
+function navigate() {
+  if (!currentCharger) return;
+  const { lat, lng, name } = currentCharger;
+  // 모바일이면 네이버맵 앱, 아니면 구글맵 웹
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  const isKorea = lng > 124 && lng < 132 && lat > 33 && lat < 39;
+  if (isMobile && isKorea) {
+    // 네이버맵 앱 시도 → 실패시 구글맵
+    window.location.href = `nmap://route/car?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(name)}`;
+    setTimeout(() => {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    }, 1500);
+  } else {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  }
+}
 
 // ── TOAST ──
 function showToast(msg) {
@@ -1035,12 +1079,34 @@ function showToast(msg) {
 }
 
 // ── SEARCH ──
+let searchTimer = null;
 document.getElementById('search-input').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase();
-  if (q.length < 2) return;
-  const found = chargers.find(c => c.name.toLowerCase().includes(q) || c.addr.toLowerCase().includes(q));
-  if (found) {
-    map.flyTo({ center:[found.lng, found.lat], zoom:15, duration:1000 });
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    const q = e.target.value.toLowerCase().trim();
+    if (q.length < 2) return;
+    const found = chargers.find(c => c.name.toLowerCase().includes(q) || c.addr.toLowerCase().includes(q));
+    if (found) {
+      map.flyTo({ center:[found.lng, found.lat], zoom:15, duration:1000 });
+      showToast('📍 ' + found.name);
+    } else {
+      showToast('❌ 검색 결과가 없습니다');
+    }
+  }, 400);
+});
+// 엔터키 즉시 검색
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    clearTimeout(searchTimer);
+    const q = e.target.value.toLowerCase().trim();
+    if (q.length < 1) return;
+    const found = chargers.find(c => c.name.toLowerCase().includes(q) || c.addr.toLowerCase().includes(q));
+    if (found) {
+      map.flyTo({ center:[found.lng, found.lat], zoom:15, duration:1000 });
+      openPanel(found);
+    } else {
+      showToast('❌ 검색 결과가 없습니다');
+    }
   }
 });
 
@@ -1070,7 +1136,7 @@ const mapStyles = {
   }
 };
 
-let currentStyle = 'dark';
+let currentStyle = 'light';
 
 function setMapStyle(styleName) {
   if (currentStyle === styleName) return;
@@ -1084,10 +1150,10 @@ function setMapStyle(styleName) {
   document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-' + styleName).classList.add('active');
 
-  // 라이트/스트리트 모드에서 UI 색상 조정
+  // 라이트/스트리트 모드에서 topbar 그라디언트만 살짝 조정 (다크 UI 정체성 유지)
   const isLight = styleName === 'light' || styleName === 'street';
   document.getElementById('topbar').style.background = isLight
-    ? 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%)'
+    ? 'linear-gradient(180deg, rgba(10,14,26,0.75) 0%, rgba(10,14,26,0) 100%)'
     : 'linear-gradient(180deg, rgba(10,14,26,0.95) 0%, rgba(10,14,26,0) 100%)';
 
   showToast('🗺️ ' + style.label + ' 모드');
@@ -1257,6 +1323,7 @@ setInterval(fetchEVNews, 30 * 60 * 1000); // 30분마다 갱신
 
 </body>
 </html>
+
 
 
 
